@@ -158,5 +158,7 @@ GROUP BY regiao
 
 
 
+-------
+
 <img width="1000" height="1000" alt="dbexpert-schema (2)" src="https://github.com/user-attachments/assets/43b28abb-525d-4f4c-833c-9bfe536e5842" />
 
