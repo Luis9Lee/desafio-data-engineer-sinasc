@@ -1,100 +1,162 @@
+# 🥇 Camada Gold - Modelo Dimensional para Saúde Materno-Infantil
+
 ## 🎯 **Objetivo Principal**
-Modelagem dimensional em Star Schema para análise estratégica de **indicadores de saúde materno-infantil** com agregações otimizadas para BI.
+Modelagem dimensional em Star Schema otimizada para análise estratégica de **indicadores de saúde materno-infantil** com agregações pré-calculadas para Business Intelligence.
 
 ---
 
-## 🏗️ **Estrutura do Star Schema**
+## 🏗️ **Arquitetura do Modelo Dimensional**
 
-### ⭐ **Tabela Fato Principal:**
+### ⭐ **Tabela Fato Central**
 **`gold_fato_saude_mensal_cnes`**
 - **Granularidade:** Mensal por estabelecimento (CNES) e município
 - **Chaves Dimensionais:** `sk_tempo`, `sk_cnes`, `sk_municipio`
-- **Métricas:** 12 indicadores estratégicos de saúde
+- **Métricas:** 15 indicadores estratégicos de saúde
+- **Registros:** ~17K combinações únicas (CNES + Município + Mês)
 
-### 📐 **Tabelas de Dimensão:**
-| Dimensão | Descrição | Chave |
+### 📐 **Dimensões Conformadas**
+| Dimensão | Descrição | Elementos |
 |:---|:---|:---|
-| **⏰ dim_tempo** | Hierarquia temporal (ano → mês) | sk_tempo |
-| **🏥 dim_estabelecimentos** | Dados das unidades de saúde | sk_cnes |
-| **🗺️ dim_municipios** | Dados geográficos municipais | sk_municipio |
+| **⏰ gold_dim_tempo** | Períodos mensais (12 meses) | ano, mes, ano_mes_formatado |
+| **🏥 gold_dim_cnes** | Estabelecimentos de saúde (~3.3K) | código CNES normalizado |
+| **🗺️ gold_dim_municipio** | Municípios brasileiros (~2K) | código, nome, UF, região, porte |
 
 ---
 
-## 📈 **Indicadores Calculados**
+## 📈 **Indicadores Estratégicos Implementados**
 
-### 👶 **Indicadores de Nascimento:**
-- `total_nascidos_vivos` - Volume de nascimentos
-- `perc_prenatal_7_ou_mais_consultas` - % com pré-natal adequado
-- `perc_baixo_peso` - % com <2500g
-- `perc_partos_cesarea` - % de cesarianas
-- `perc_maes_adolescentes` - % mães <20 anos
+### 👶 **SAÚDE MATERNO-INFANTIL (NASCIMENTOS)**
+| Indicador | Descrição | Fórmula |
+|:---|:---|:---|
+| **`total_nascidos_vivos`** | Volume absoluto de nascimentos | COUNT(*) |
+| **`nascidos_7_consultas`** | Pré-natal adequado (7+ consultas) | COUNT(consultas_pre_natal ≥ 7) |
+| **`nascidos_baixo_peso`** | Recém-nascidos <2500g | COUNT(peso_gramas < 2500) |
+| **`nascidos_baixissimo_peso`** | Recém-nascidos <1500g | COUNT(peso_gramas < 1500) |
+| **`nascidos_partos_cesarea`** | Partos cesáreos | COUNT(tipo_parto = 'Cesáreo') |
+| **`nascidos_maes_adolescentes`** | Mães adolescentes (<20 anos) | COUNT(idade_mae < 20) |
+| **`nascidos_pre_termo`** | Nascimentos pré-termo (<37 semanas) | COUNT(semanas_gestacao < 37) |
+| **`nascidos_prenatal_adequado`** | Pré-natal adequado | COUNT(consultas_pre_natal ≥ 7) |
 
-### ⚠️ **Indicadores de Mortalidade:**
-- `total_obitos_infantis` - Óbitos <1 ano
-- `taxa_mortalidade_infantil` - por 1000 nascidos
-- `total_obitos_neonatais` - Óbitos <28 dias
-- `taxa_mortalidade_neonatal` - por 1000 nascidos  
-- `total_obitos_maternos` - Óbitos maternos
-- `taxa_mortalidade_materna` - por 100.000 nascidos
-
----
-
-## 🔍 **Dimensões de Análise**
-
-### ⏰ **Temporal:**
-- Agregação mensal (ano_mes)
-- Análise de tendências
-- Sazonalidade
-
-### 🏥 **Por Estabelecimento:**
-- Comparativo entre unidades
-- Desempenho por CNES
-- Benchmarking
-
-### 🗺️ **Geográfica:**
-- Análise por município
-- Disparidades regionais
-- Planejamento territorial
+### ⚠️ **INDICADORES DE MORTALIDADE (ÓBITOS)**
+| Indicador | Descrição | Fórmula |
+|:---|:---|:---|
+| **`total_obitos`** | Total de óbitos registrados | COUNT(*) |
+| **`total_obitos_infantis`** | Óbitos infantis (<1 ano) | COUNT(idade < 1) |
+| **`total_obitos_neonatais`** | Óbitos neonatais (<28 dias) | COUNT(idade < 28) |
+| **`total_obitos_maternos`** | Óbitos maternos | COUNT(causa_basica LIKE 'O%') |
 
 ---
 
-## 🚀 **Vantagens do Modelo**
+## 📊 **View de Indicadores Calculados**
 
-### ⚡ **Performance:**
-- Agregações pré-calculadas
-- Consultas otimizadas para BI
-- Junções simplificadas
+**`gold_indicadores_saude`** - 28 colunas com métricas prontas para análise:
 
-### 📋 **Consistência:**
-- Indicadores padronizados
-- Fórmulas validadas
-- Metadados ricos
+### 📈 **Taxas e Percentuais (Cálculos Dinâmicos)**
+```sql
+-- Qualidade do Pré-natal
+perc_prenatal_7_ou_mais_consultas = (nascidos_7_consultas / total_nascidos_vivos) * 100
+perc_prenatal_adequado = (nascidos_prenatal_adequado / total_nascidos_vivos) * 100
 
-### 🔄 **Flexibilidade:**
-- Adição de novas dimensões
-- Expansão de indicadores
-- Suporte a históricos
+-- Resultados Perinatais
+perc_baixo_peso_total = ((nascidos_baixo_peso + nascidos_baixissimo_peso) / total_nascidos_vivos) * 100
+perc_baixo_peso = (nascidos_baixo_peso / total_nascidos_vivos) * 100
+perc_baixissimo_peso = (nascidos_baixissimo_peso / total_nascidos_vivos) * 100
+perc_pre_termo = (nascidos_pre_termo / total_nascidos_vivos) * 100
+
+-- Procedimentos Obstétricos
+perc_partos_cesarea = (nascidos_partos_cesarea / total_nascidos_vivos) * 100
+
+-- Perfil Sociodemográfico
+perc_maes_adolescentes = (nascidos_maes_adolescentes / total_nascidos_vivos) * 100
+
+-- Mortalidade (Taxas por mil/nascidos)
+taxa_mortalidade_infantil = (total_obitos_infantis / total_nascidos_vivos) * 1000
+taxa_mortalidade_neonatal = (total_obitos_neonatais / total_nascidos_vivos) * 1000
+taxa_mortalidade_materna = (total_obitos_maternos / total_nascidos_vivos) * 100000
+```
 
 ---
 
-## 📊 **View Analítica:**
-**`gold_indicadores_saude`**
-- 17 colunas com indicadores calculados
-- Percentuais e taxas prontos
-- Otimizada para dashboards
+## 🔍 **Dimensões de Análise Habilitadas**
+
+### ⏰ **Temporal**
+- Agregação mensal (12 períodos)
+- Análise de tendências e sazonalidade
+- Comparativos interanuais
+
+### 🏥 **Por Estabelecimento de Saúde**
+- Desempenho por CNES (~3.3K unidades)
+- Benchmarking entre unidades
+- Identificação de melhores práticas
+
+### 🗺️ **Geográfica**
+- Análise por município (~2K municípios)
+- Disparidades regionais e interestaduais
+- Planejamento territorial da saúde
 
 ---
 
-## 🎯 **Impacto Business Intelligence**
+## ⚡ **Otimizações Implementadas**
 
-> **Dados prontos para análise estratégica** com modelo dimensional que permite:
-> - Monitoramento de indicadores de saúde
-> - Tomada de decisão baseada em evidências  
-> - Identificação de desigualdades regionais
-> - Avaliação de políticas públicas
+### 🔄 **Processamento Eficiente**
+- **Agregação pré-calculada** para performance de consulta
+- **Full outer join** entre nascimentos e óbitos para cobertura completa
+- **Preenchimento de nulos** com zero para cálculos seguros
+- **Compactação Delta** com `OPTIMIZE` e estatísticas
 
-**Status:** ✅ Produção - Modelo completo para consumo analítico
+### 📊 **Consumo Analítico Otimizado**
+- **View materializada** com todos os indicadores calculados
+- **Chaves dimensionais** padronizadas para joins eficientes
+- **Filtros otimizados** por período e localidade
 
-<img width="1000" height="1000" alt="dbexpert-schema (1)" src="https://github.com/user-attachments/assets/15456bfc-3733-47a0-b06d-c41fc02b1519" />
+---
 
+## 🚀 **Pronto para Análise Estratégica**
+
+**Status:** ✅ Produção - Modelo dimensional completo para:
+
+### 📈 **Dashboards e Relatórios**
+- Monitoramento de indicadores do SUS em tempo real
+- Acompanhamento de metas de qualidade da atenção materno-infantil
+- Alinhamento com ODS (Objetivos de Desenvolvimento Sustentável)
+
+### 🔍 **Análises Estratégicas**
+- Tendências temporais (séries históricas)
+- Comparativos regionais e municipais
+- Análise de equidade e disparidades na saúde
+
+### 🎯 **Consultas Exemplo**
+```sql
+-- Top 10 municípios com maior taxa de cesárea
+SELECT * FROM gold_indicadores_saude 
+ORDER BY perc_partos_cesarea DESC LIMIT 10
+
+-- Evolução mensal da mortalidade infantil
+SELECT sk_tempo, SUM(total_obitos_infantis) as obitos, 
+       SUM(total_nascidos_vivos) as nascidos
+FROM gold_fato_saude_mensal_cnes 
+GROUP BY sk_tempo ORDER BY sk_tempo
+
+-- Qualidade do pré-natal por região
+SELECT regiao, AVG(perc_prenatal_adequado) as pre_natal_medio
+FROM gold_indicadores_saude i
+JOIN gold_dim_municipio m ON i.sk_municipio = m.id_municipio  
+GROUP BY regiao
+```
+
+---
+
+## 📋 **Metadados Técnicos**
+
+**Database:** `default`  
+**Formato:** Delta Lake
+**Granularidade:** Mensal por estabelecimento de saúde
+**Performance:** Consultas subsegundo para agregados
+**Disponibilidade:** Dados prontos para consumo analítico
+
+> **Impacto Business Intelligence:** Dados estruturados para tomada de decisão baseada em evidências, identificação de desigualdades regionais e avaliação de políticas públicas de saúde.
+
+
+
+<img width="1000" height="1000" alt="dbexpert-schema (2)" src="https://github.com/user-attachments/assets/43b28abb-525d-4f4c-833c-9bfe536e5842" />
 
