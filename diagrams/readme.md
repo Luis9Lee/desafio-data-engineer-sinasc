@@ -1,161 +1,100 @@
-# 🥇 Camada Gold - Camada de Agregação e Indicadores Estratégicos
-
 ## 🎯 **Objetivo Principal**
-Agregação dos dados refinados da camada Silver para cálculo de **indicadores estratégicos de saúde pública** com foco em análise temporal, comparativa e territorial.
+Modelagem dimensional em Star Schema para análise estratégica de **indicadores de saúde materno-infantil** com agregações otimizadas para BI.
 
 ---
 
-## 📊 **O que é a Camada Gold?**
+## 🏗️ **Estrutura do Star Schema**
 
-A camada Gold representa o **nível mais alto de maturidade dos dados**, onde informações são:
-- ✅ **Agregadas** por dimensões estratégicas (tempo, local, tipo)
-- ✅ **Transformadas** em indicadores e métricas de negócio
-- ✅ **Otimizadas** para consultas analíticas e visualização
-- ✅ **Consolidadas** para tomada de decisão
-
----
-
-## 🏗️ **Estrutura da Camada Gold**
-
-### 📦 **Tabela Fato Principal:**
+### ⭐ **Tabela Fato Principal:**
 **`gold_fato_saude_mensal_cnes`**
-- Agregação mensal por estabelecimento de saúde (CNES) e município
-- 12 colunas de métricas estratégicas
-- Chaves dimensionais para integração
+- **Granularidade:** Mensal por estabelecimento (CNES) e município
+- **Chaves Dimensionais:** `sk_tempo`, `sk_cnes`, `sk_municipio`
+- **Métricas:** 12 indicadores estratégicos de saúde
 
-### 📊 **View Analítica:**
-**`gold_indicadores_saude`**
-- 17 colunas com indicadores calculados
-- Percentuais e taxas prontos para análise
-- Visualização direta para dashboards
+### 📐 **Tabelas de Dimensão:**
+| Dimensão | Descrição | Chave |
+|:---|:---|:---|
+| **⏰ dim_tempo** | Hierarquia temporal (ano → mês) | sk_tempo |
+| **🏥 dim_estabelecimentos** | Dados das unidades de saúde | sk_cnes |
+| **🗺️ dim_municipios** | Dados geográficos municipais | sk_municipio |
 
 ---
 
-## 📈 **Principais Indicadores Calculados**
+## 📈 **Indicadores Calculados**
 
 ### 👶 **Indicadores de Nascimento:**
-| Indicador | Fórmula | Significado |
-|:---|:---|:---|
-| **Nascidos Vivos** | Contagem absoluta | Volume de atendimentos |
-| **Pré-natal Adequado** | (7+ consultas/Total) × 100 | Qualidade do cuidado pré-natal |
-| **Baixo Peso** | (<2500g/Total) × 100 | Indicador de condições de vida |
-| **Partos Cesáreos** | (Cesáreas/Total) × 100 | Padrões de prática obstétrica |
-| **Mães Adolescentes** | (<20 anos/Total) × 100 | Gravidez na adolescência |
+- `total_nascidos_vivos` - Volume de nascimentos
+- `perc_prenatal_7_ou_mais_consultas` - % com pré-natal adequado
+- `perc_baixo_peso` - % com <2500g
+- `perc_partos_cesarea` - % de cesarianas
+- `perc_maes_adolescentes` - % mães <20 anos
 
-### ⚰️ **Indicadores de Mortalidade:**
-| Indicador | Fórmula | Significado |
-|:---|:---|:---|
-| **Mortalidade Infantil** | (Óbitos <1 ano/Nascidos) × 1000 | Principal indicador de saúde |
-| **Mortalidade Neonatal** | (Óbitos <28 dias/Nascidos) × 1000 | Qualidade do cuidado perinatal |
-| **Mortalidade Materna** | (Óbitos maternos/Nascidos) × 100.000 | Qualidade da assistência obstétrica |
+### ⚠️ **Indicadores de Mortalidade:**
+- `total_obitos_infantis` - Óbitos <1 ano
+- `taxa_mortalidade_infantil` - por 1000 nascidos
+- `total_obitos_neonatais` - Óbitos <28 dias
+- `taxa_mortalidade_neonatal` - por 1000 nascidos  
+- `total_obitos_maternos` - Óbitos maternos
+- `taxa_mortalidade_materna` - por 100.000 nascidos
 
 ---
 
 ## 🔍 **Dimensões de Análise**
 
 ### ⏰ **Temporal:**
-- Agregação mensal (`ano_mes`)
-- Análise de sazonalidade
-- Tendências temporais
+- Agregação mensal (ano_mes)
+- Análise de tendências
+- Sazonalidade
 
-### 🏥 **Geográfica:**
-- Por estabelecimento de saúde (`codigo_cnes`)
-- Por município (`codigo_municipio`)
-- Análise comparativa entre regiões
+### 🏥 **Por Estabelecimento:**
+- Comparativo entre unidades
+- Desempenho por CNES
+- Benchmarking
 
-### 👥 **Demográfica:**
-- Faixa etária materna
-- Tipo de parto
-- Adequação do pré-natal
+### 🗺️ **Geográfica:**
+- Análise por município
+- Disparidades regionais
+- Planejamento territorial
 
 ---
 
-## 🚀 **Vantagens da Abordagem**
+## 🚀 **Vantagens do Modelo**
 
 ### ⚡ **Performance:**
 - Agregações pré-calculadas
-- Consultas otimizadas
-- Tempo de resposta rápido para dashboards
+- Consultas otimizadas para BI
+- Junções simplificadas
 
 ### 📋 **Consistência:**
-- Cálculos padronizados
-- Métricas confiáveis
+- Indicadores padronizados
 - Fórmulas validadas
+- Metadados ricos
 
-### 🔄 **Manutenibilidade:**
-- Fácil atualização
-- Escalável para novos indicadores
-- Documentação clara
-
----
-
-## 🎨 **Casos de Uso Habilitados**
-
-### 1. **Dashboard de Monitoramento**
-- Acompanhamento mensal de indicadores
-- Alertas para valores críticos
-- Comparativo entre regiões
-
-### 2. **Análise de Desempenho**
-- Ranking de estabelecimentos
-- Identificação de melhores práticas
-- Alocação de recursos
-
-### 3. **Pesquisa e Estudos**
-- Correlação entre variáveis
-- Estudos temporais
-- Publicações científicas
-
-### 4. **Planejamento em Saúde**
-- Projeções baseadas em tendências
-- Identificação de áreas prioritárias
-- Avaliação de políticas públicas
+### 🔄 **Flexibilidade:**
+- Adição de novas dimensões
+- Expansão de indicadores
+- Suporte a históricos
 
 ---
 
-## 📊 **Exemplo de Consulta Gold**
-
-```sql
--- Análise de mortalidade infantil por região
-SELECT 
-    regiao,
-    ano,
-    SUM(total_nascidos_vivos) as nascimentos,
-    SUM(total_obitos_infantis) as obitos_infantis,
-    ROUND(AVG(taxa_mortalidade_infantil), 2) as taxa_media
-FROM gold_indicadores_saude
-JOIN dim_municipios ON sk_municipio = codigo_municipio
-GROUP BY regiao, ano
-ORDER BY regiao, ano;
-```
+## 📊 **View Analítica:**
+**`gold_indicadores_saude`**
+- 17 colunas com indicadores calculados
+- Percentuais e taxas prontos
+- Otimizada para dashboards
 
 ---
 
-## 🔮 **Próximas Evoluções**
+## 🎯 **Impacto Business Intelligence**
 
-1. **📈 Indicadores Adicionais:**
-   - Razão de mortalidade proporcional
-   - Indicadores de desigualdade
-   - Análise de sobrevivência
+> **Dados prontos para análise estratégica** com modelo dimensional que permite:
+> - Monitoramento de indicadores de saúde
+> - Tomada de decisão baseada em evidências  
+> - Identificação de desigualdades regionais
+> - Avaliação de políticas públicas
 
-2. **🤖 Análise Preditiva:**
-   - Modelos de risco
-   - Alertas preditivos
-   - Simulações de políticas
+**Status:** ✅ Produção - Modelo completo para consumo analítico
 
-3. **🌐 Integração:**
-   - Dados socioeconômicos
-   - Informações de cobertura
-   - Integração com outros sistemas
+<img width="1000" height="1000" alt="dbexpert-schema (1)" src="https://github.com/user-attachments/assets/15456bfc-3733-47a0-b06d-c41fc02b1519" />
 
----
 
-## 🎯 **Impacto da Camada Gold**
-
-> **Transformação final dos dados em conhecimento acionável** para gestores, profissionais de saúde e pesquisadores, permitindo decisões baseadas em evidências para melhoria da saúde materno-infantil.
-
----
-
-**💡 Valor Principal:** Dados prontos para análise estratégica, com indicadores padronizados e confiáveis para tomada de decisão em saúde pública.
-
-<img width="600" height="700" alt="dbexpert-schema" src="https://github.com/user-attachments/assets/9cfc001e-a9fc-4c51-b68f-19b81327b278" />
