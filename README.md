@@ -370,6 +370,7 @@ Modelo dimensional pronto para analise!
 # 4. Camada Gold - Modelo dimensional
 # 5. Validação - Testes e qualidade
 ```
+(Observação: Optou-se por converter os arquivos de .xls para .csv devido à incompatibilidade da edição gratuita do Databricks com o formato .xls, garantindo assim a precisão dos dados.)
 
 ### 🔮 Próximas Etapas
 
