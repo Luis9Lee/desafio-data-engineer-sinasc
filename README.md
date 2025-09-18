@@ -230,37 +230,110 @@ verificar_desafio_essencial()
 **CAMADA SILVER - RESULTADOS:**
 ```
 ================================================================================
-🏗️  PIPELINE DE TRANSFORMAÇÃO - CAMADA SILVER
+PIPELINE DE TRANSFORMACAO - CAMADA SILVER
 ================================================================================
-✅ Tabela bronze_sinasc disponível (455,354 registros)
-✅ Tabela bronze_sim disponível (28,290 registros)
+Verificando tabelas bronze...
+Tabela bronze_sinasc disponivel (455,354 registros)
+Tabela bronze_sim disponivel (28,290 registros)
 
-✅ Dimensão dim_municipios criada com sucesso!
-✅ Dimensão dim_distritos criada!
+Criando dimensoes geograficas...
+Criando dimensoes geograficas...
+Dimensao dim_municipios criada com sucesso!
+Dimensao dim_distritos criada!
 
-✅ silver_nascimentos: 172,626 registros, 22 colunas  
-✅ silver_obitos: 28,290 registros, 9 colunas
-✅ dim_municipios: 10 registros, 6 colunas
-✅ dim_distritos: 0 registros, 3 colunas
+==================================================
+PROCESSANDO NASCIMENTOS
+==================================================
+Processando dados de nascimentos...
+Registros bronze SINASC: 455,354
+Registros apos transformacao: 172,626
+Tabela silver_nascimentos criada com sucesso!
 
-🎉 TRANSFORMAÇÃO SILVER CONCLUÍDA COM SUCESSO!
+==================================================
+PROCESSANDO OBITOS
+==================================================
+Processando dados de obitos...
+Registros bronze SIM: 28,290
+Tabela silver_obitos processada: 28,290 registros
+
+==================================================
+VALIDACAO DAS TABELAS SILVER
+==================================================
+DISPONIVEL silver_nascimentos: 172,626 registros, 22 colunas
+DISPONIVEL silver_obitos: 28,290 registros, 9 colunas
+DISPONIVEL dim_municipios: 10 registros, 6 colunas
+DISPONIVEL dim_distritos: 0 registros, 3 colunas
+
+================================================================================
+RELATORIO DE EXECUCAO - SILVER
+================================================================================
+silver_nascimentos: Disponivel
+silver_obitos: Disponivel
+
+Tabelas processadas com sucesso: 2/2
+TRANSFORMACAO SILVER CONCLUIDA COM SUCESSO!
+
+Amostra de silver_nascimentos:
++-----------+---------------------------+---------------+-----------+--------------+----------------+----------------------+-------------------+-----------------------+---------+----------------+--------+--------+----------------+----------+--------------+----+------+-----------------+-----------------+--------------------+-------------------+
+|codigo_cnes|codigo_municipio_nascimento|data_nascimento|peso_gramas|categoria_peso|semanas_gestacao|classificacao_gestacao|consultas_pre_natal|classificacao_pre_natal|idade_mae|faixa_etaria_mae|    sexo|raca_cor|escolaridade_mae|tipo_parto|nome_municipio|  uf|regiao|tamanho_municipio|ano_processamento|  timestamp_ingestao|nome_arquivo_origem|
++-----------+---------------------------+---------------+-----------+--------------+----------------+----------------------+-------------------+-----------------------+---------+----------------+--------+--------+----------------+----------+--------------+----+------+-----------------+-----------------+--------------------+-------------------+
+|    2774720|                   350070.0|     2024-01-14|       3050|   Peso Normal|              38|                 Termo|                  4|   Inadequado (<7 co...|        0|Menor de 20 anos|Feminino|  Branca|       8-11 anos|   Cesareo|          NULL|NULL|  NULL|             NULL|             2024|2025-09-16 22:18:...|               NULL|
+|    2774720|                   350070.0|     2024-05-13|       3484|   Peso Normal|              40|                 Termo|                  4|   Inadequado (<7 co...|        0|Menor de 20 anos|Feminino|  Branca|        12+ anos|   Cesareo|          NULL|NULL|  NULL|             NULL|             2024|2025-09-16 22:18:...|               NULL|
+|    2082195|                   350190.0|     2024-06-01|       2920|   Peso Normal|              38|                 Termo|                  4|   Inadequado (<7 co...|        0|Menor de 20 anos|Feminino|  Branca|        12+ anos|   Cesareo|          NULL|NULL|  NULL|             NULL|             2024|2025-09-16 22:18:...|               NULL|
++-----------+---------------------------+---------------+-----------+--------------+----------------+----------------------+-------------------+-----------------------+---------+----------------+--------+--------+----------------+----------+--------------+----+------+-----------------+-----------------+--------------------+-------------------+
+
+
+Amostra de silver_obitos:
++-----------+----------------------+-----+---------+------------+-----------------+--------------------+-------------------+----------+
+|codigo_cnes|codigo_municipio_obito|idade|     sexo|causa_basica|ano_processamento|  timestamp_ingestao|nome_arquivo_origem|data_obito|
++-----------+----------------------+-----+---------+------------+-----------------+--------------------+-------------------+----------+
+|    2654261|              240810.0|  205|Masculino|        P219|             2024|2025-09-16 22:19:...|               NULL|2024-01-15|
+|    2665778|              240200.0|  305|Masculino|        J159|             2024|2025-09-16 22:19:...|               NULL|2024-07-21|
+|    2237571|              431490.0|  201| Feminino|        P000|             2024|2025-09-16 22:19:...|               NULL|2024-07-01|
++-----------+----------------------+-----+---------+------------+-----------------+--------------------+-------------------+----------+
+
 ```
 
 **CAMADA GOLD - RESULTADOS:**
 ```
 ================================================================================
-🌟 PIPELINE DE CRIAÇÃO - CAMADA GOLD  
+PIPELINE DE CRIACAO - CAMADA GOLD
 ================================================================================
-✅ Tabela fato criada: 17,395 registros
-✅ View gold_indicadores_saude criada com sucesso!
+Objetos anteriores removidos
+Criando tabela fato Gold...
+Tabela silver_nascimentos carregada: 172,626 registros
+Tabela silver_obitos carregada: 28,290 registros
+Tabela fato criada: 17,395 registros
+Tabela gold_fato_saude_mensal_cnes criada com sucesso!
+Criando view de indicadores...
+View gold_indicadores_saude criada com sucesso!
+Criando dimensoes Gold...
+Dimensao gold_dim_tempo criada
+Dimensao gold_dim_cnes criada
+Dimensao gold_dim_municipio criada
 
-✅ gold_fato_saude_mensal_cnes: 17,395 registros
-✅ gold_indicadores_saude: 17,395 registros
-✅ gold_dim_tempo: 12 registros (meses)
-✅ gold_dim_cnes: 3,305 registros (estabelecimentos)  
-✅ gold_dim_municipio: 1,973 registros (municípios)
+================================================================================
+RELATORIO DE EXECUCAO - GOLD
+================================================================================
+gold_fato_saude_mensal_cnes: Disponivel (17,395 registros)
+gold_indicadores_saude: Disponivel (17,395 registros)
+gold_dim_tempo: Disponivel (12 registros)
+gold_dim_cnes: Disponivel (3,305 registros)
+gold_dim_municipio: Disponivel (1,973 registros)
 
-🎉 CAMADA GOLD CRIADA COM SUCESSO!
+Objetos criados com sucesso: 5/5
+CAMADA GOLD CRIADA COM SUCESSO!
+
+================================================================================
+EXEMPLOS DE CONSULTAS DISPONIVEIS:
+================================================================================
+   Top 10 municipios com maior taxa de cesarea
+   Evolucao mensal da mortalidade infantil
+   Qualidade do pre-natal por regiao
+   Taxa de mortalidade materna por estabelecimento
+   Percentual de prematuridade por periodo
+
+Modelo dimensional pronto para analise!
 ```
 
 ### 🎯 Decisões Técnicas Estratégicas
