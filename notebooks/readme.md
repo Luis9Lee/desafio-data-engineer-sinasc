@@ -136,55 +136,55 @@ O pipeline gera métricas completas incluindo:
 
 -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
     # Databricks notebook source
-    # =============================================================================
-    # CAMADA BRONZE - PIPELINE DE INGESTÃO DE DADOS DO DATASUS
-    # =============================================================================
-    # Objetivo: Ingestão robusta de dados do DATASUS (SINASC e SIM) com tratamento de
-    #           erros, controle de qualidade e metadados para rastreabilidade.
-    # Arquitetura: Medallion (Bronze) com schema evolution e carga incremental
-    # =============================================================================
-    
-    # LIBRARIES IMPORT
-    from pyspark.sql.functions import lit, current_timestamp, col, sha2, concat_ws
-    from pyspark.sql.types import StructType, StructField, StringType, TimestampType, LongType
-    import re
-    from datetime import datetime
-    import os
-    
-    # =============================================================================
-    # GLOBAL CONFIGURATION
-    # =============================================================================
-    # Configurações globais para todo o pipeline
-    spark.sql("USE default")  # Define database padrão
-    
-    # Path configuration for Databricks environment
-    VOLUME_BASE_PATH = "/Volumes/workspace/default/data/"
-    
-    # Target table names
-    BRONZE_SINASC_TABLE = "bronze_sinasc"
-    BRONZE_SIM_TABLE = "bronze_sim"
-    BRONZE_ANEXOS_TABLE = "bronze_anexos"
-    
-    # =============================================================================
-    # HELPER FUNCTIONS
-    # =============================================================================
-    
-    def setup_environment():
-        """
-        Configura otimizações do ambiente Spark para melhor performance no processamento
-        de arquivos e gestão de recursos.
-        """
-        spark.conf.set("spark.sql.adaptive.enabled", "true")
-        spark.conf.set("spark.sql.adaptive.coalescePartitions.enabled", "true")
-        spark.conf.set("spark.sql.adaptive.skewJoin.enabled", "true")
-        print("✅ Ambiente Spark otimizado para processamento de dados")
-    
-    def list_volume_files(file_extensions=None):
-        """
-        Lista arquivos disponíveis no volume com filtro por extensão.
+# =============================================================================
+# CAMADA BRONZE - PIPELINE DE INGESTAO DE DADOS DO DATASUS
+# =============================================================================
+# Objetivo: Ingestao robusta de dados do DATASUS (SINASC e SIM) com tratamento de
+#           erros, controle de qualidade e metadados para rastreabilidade.
+# Arquitetura: Medallion (Bronze) com schema evolution e carga incremental
+# =============================================================================
+
+# LIBRARIES IMPORT
+from pyspark.sql.functions import lit, current_timestamp, col, sha2, concat_ws
+from pyspark.sql.types import StructType, StructField, StringType, TimestampType, LongType
+import re
+from datetime import datetime
+import os
+
+# =============================================================================
+# GLOBAL CONFIGURATION
+# =============================================================================
+# Configuracoes globais para todo o pipeline
+spark.sql("USE default")  # Define database padrao
+
+# Path configuration for Databricks environment
+VOLUME_BASE_PATH = "/Volumes/workspace/default/data/"
+
+# Target table names
+BRONZE_SINASC_TABLE = "bronze_sinasc"
+BRONZE_SIM_TABLE = "bronze_sim"
+BRONZE_ANEXOS_TABLE = "bronze_anexos"
+
+# =============================================================================
+# HELPER FUNCTIONS
+# =============================================================================
+
+def setup_environment():
+    """
+    Configura otimizacoes do ambiente Spark para melhor performance no processamento
+    de arquivos e gestao de recursos.
+    """
+    spark.conf.set("spark.sql.adaptive.enabled", "true")
+    spark.conf.set("spark.sql.adaptive.coalescePartitions.enabled", "true")
+    spark.conf.set("spark.sql.adaptive.skewJoin.enabled", "true")
+    print("Ambiente Spark otimizado para processamento de dados")
+
+def list_volume_files(file_extensions=None):
+    """
+    Lista arquivos disponiveis no volume com filtro por extensao.
     
     Args:
-        file_extensions (list): Lista de extensões para filtrar (ex: ['.dbc', '.csv'])
+        file_extensions (list): Lista de extensoes para filtrar (ex: ['.dbc', '.csv'])
     
     Returns:
         list: Lista ordenada de arquivos encontrados
@@ -193,7 +193,7 @@ O pipeline gera métricas completas incluindo:
         files = dbutils.fs.ls(VOLUME_BASE_PATH)
         
         if file_extensions:
-            # Filtra arquivos pelas extensões especificadas
+            # Filtra arquivos pelas extensoes especificadas
             filtered_files = [
                 f for f in files 
                 if any(f.name.lower().endswith(ext.lower()) for ext in file_extensions)
@@ -204,25 +204,25 @@ O pipeline gera métricas completas incluindo:
         return sorted(files, key=lambda x: x.name)
     
     except Exception as e:
-        print(f"❌ Erro ao listar arquivos: {e}")
+        print(f"Erro ao listar arquivos: {e}")
         return []
-    
-    def extract_file_metadata(filename):
-        """
-        Extrai metadados estruturados do nome do arquivo conforme padrões DATASUS.
+
+def extract_file_metadata(filename):
+    """
+    Extrai metadados estruturados do nome do arquivo conforme padroes DATASUS.
     
     Args:
-        filename (str): Nome do arquivo para extração de metadados
+        filename (str): Nome do arquivo para extracao de metadados
     
     Returns:
-        dict: Dicionário com metadados extraídos ou None em caso de erro
+        dict: Dicionario com metadados extraidos ou None em caso de erro
     """
     try:
-        # Extrai nome base e extensão do arquivo
+        # Extrai nome base e extensao do arquivo
         base_name, extension = os.path.splitext(filename)
         extension = extension.lower()
         
-        # Padrões de nomenclatura DATASUS para SINASC/SIM
+        # Padroes de nomenclatura DATASUS para SINASC/SIM
         datasus_patterns = [
             r'(?P<system>[A-Z]+)(?P<year>\d{4})$',  # DNSP2010
             r'(?P<system>[A-Z]+)(?P<year>\d{2})$',   # DOINF10
@@ -234,7 +234,7 @@ O pipeline gera métricas completas incluindo:
                 year = match.group('year')
                 system = match.group('system').upper()
                 
-                # Normaliza ano (2 dígitos → 4 dígitos)
+                # Normaliza ano (2 digitos → 4 digitos)
                 if len(year) == 2:
                     year_int = int(year)
                     year = str(1900 + year_int) if year_int > 50 else str(2000 + year_int)
@@ -247,7 +247,7 @@ O pipeline gera métricas completas incluindo:
                     'file_type': 'datasus'
                 }
         
-        # Padrões para arquivos anexos (CSV de suporte)
+        # Padroes para arquivos anexos (CSV de suporte)
         annex_patterns = [
             r'(?P<type>Distritos_.*)$',
             r'(?P<type>RELATORIO_DTB_BRASIL_.*)$',
@@ -257,7 +257,7 @@ O pipeline gera métricas completas incluindo:
             match = re.search(pattern, base_name, re.IGNORECASE)
             if match:
                 return {
-                    'file_year': '2024',  # Ano padrão para anexos
+                    'file_year': '2024',  # Ano padrao para anexos
                     'source_system': 'ANEXO',
                     'filename': filename,
                     'file_extension': extension,
@@ -265,7 +265,7 @@ O pipeline gera métricas completas incluindo:
                     'annex_category': match.group('type') if 'type' in match.groupdict() else 'others'
                 }
         
-        # Metadados genéricos para arquivos não reconhecidos
+        # Metadados genericos para arquivos nao reconhecidos
         return {
             'file_year': str(datetime.now().year),
             'source_system': 'OUTROS',
@@ -275,17 +275,17 @@ O pipeline gera métricas completas incluindo:
         }
         
     except Exception as e:
-        print(f"❌ Erro ao extrair metadados de {filename}: {e}")
+        print(f"Erro ao extrair metadados de {filename}: {e}")
         return None
 
-    def read_file_with_fallback(file_path, filename, extension):
-        """
-        Lê arquivos com múltiplas estratégias de fallback para tolerância a erros.
+def read_file_with_fallback(file_path, filename, extension):
+    """
+    Le arquivos com multiplas estrategias de fallback para tolerancia a erros.
     
     Args:
         file_path (str): Caminho completo do arquivo
         filename (str): Nome do arquivo para logging
-        extension (str): Extensão do arquivo
+        extension (str): Extensao do arquivo
     
     Returns:
         DataFrame: DataFrame com dados processados ou None em caso de falha
@@ -294,34 +294,34 @@ O pipeline gera métricas completas incluindo:
         extension = extension.lower()
         
         if extension == '.dbc':
-            # Leitor específico para arquivos DBC (formato DATASUS)
+            # Leitor especifico para arquivos DBC (formato DATASUS)
             try:
                 df = spark.read.format("dbf").load(file_path)
-                print(f"✅ Arquivo {filename} lido com sucesso via DBF")
+                print(f"Arquivo {filename} lido com sucesso via DBF")
                 return df
             except Exception as e:
-                print(f"⚠️  Fallback para DBC {filename}: {e}")
+                print(f"Fallback para DBC {filename}: {e}")
                 return create_fallback_dataframe(file_path, filename)
         
         elif extension == '.parquet':
             # Leitor para arquivos Parquet
             try:
                 df = spark.read.parquet(file_path)
-                print(f"✅ Arquivo {filename} lido como Parquet")
+                print(f"Arquivo {filename} lido como Parquet")
                 return df
             except Exception as e:
-                print(f"❌ Erro ao ler Parquet {filename}: {e}")
+                print(f"Erro ao ler Parquet {filename}: {e}")
                 return None
         
         elif extension == '.csv':
-            # Leitor para CSV com múltiplas tentativas de delimitador
+            # Leitor para CSV com multiplas tentativas de delimitador
             try:
                 df = spark.read \
                     .option("header", "true") \
                     .option("inferSchema", "true") \
                     .option("delimiter", ";") \
                     .csv(file_path)
-                print(f"✅ Arquivo {filename} lido como CSV (ponto-e-vírgula)")
+                print(f"Arquivo {filename} lido como CSV (ponto-e-virgula)")
                 return df
             except Exception as e:
                 try:
@@ -330,30 +330,30 @@ O pipeline gera métricas completas incluindo:
                         .option("inferSchema", "true") \
                         .option("delimiter", ",") \
                         .csv(file_path)
-                    print(f"✅ Arquivo {filename} lido como CSV (vírgula)")
+                    print(f"Arquivo {filename} lido como CSV (virgula)")
                     return df
                 except Exception as e2:
-                    print(f"❌ Falha ao ler CSV {filename}: {e2}")
+                    print(f"Falha ao ler CSV {filename}: {e2}")
                     return None
         
         else:
-            print(f"❌ Formato não suportado: {extension} para {filename}")
+            print(f"Formato nao suportado: {extension} para {filename}")
             return None
             
     except Exception as e:
-        print(f"❌ Erro crítico ao processar {filename}: {e}")
+        print(f"Erro critico ao processar {filename}: {e}")
         return None
 
-    def create_fallback_dataframe(file_path, filename):
-        """
-        Cria DataFrame de fallback para arquivos corrompidos ou com problemas.
+def create_fallback_dataframe(file_path, filename):
+    """
+    Cria DataFrame de fallback para arquivos corrompidos ou com problemas.
     
     Args:
-        file_path (str): Caminho do arquivo problemático
+        file_path (str): Caminho do arquivo problematico
         filename (str): Nome do arquivo para registro
     
     Returns:
-        DataFrame: DataFrame básico com metadados do erro
+        DataFrame: DataFrame basico com metadados do erro
     """
     try:
         # Schema para dados de fallback
@@ -367,25 +367,25 @@ O pipeline gera métricas completas incluindo:
             (f"content_{filename}", "Arquivo processado com fallback", filename)
         ], schema)
         
-        print(f"⚠️  Arquivo {filename} processado com fallback")
+        print(f"Arquivo {filename} processado com fallback")
         return df
         
     except Exception as e:
-        print(f"❌ Erro no fallback para {filename}: {e}")
-        # Último recurso - DataFrame mínimo com metadados
+        print(f"Erro no fallback para {filename}: {e}")
+        # Ultimo recurso - DataFrame minimo com metadados
         schema = StructType([
             StructField("filename", StringType(), True),
             StructField("processing_status", StringType(), True)
         ])
         return spark.createDataFrame([(filename, "processing_error")], schema)
 
-    def create_bronze_table(table_name, is_annex=False):
-        """
-        Cria tabela Delta Lake na camada Bronze com schema otimizado.
-        
+def create_bronze_table(table_name, is_annex=False):
+    """
+    Cria tabela Delta Lake na camada Bronze com schema otimizado.
+    
     Args:
         table_name (str): Nome da tabela a ser criada
-        is_annex (bool): Indica se é tabela de anexos
+        is_annex (bool): Indica se e tabela de anexos
     """
     if not spark.catalog.tableExists(table_name):
         if is_annex:
@@ -422,21 +422,21 @@ O pipeline gera métricas completas incluindo:
         
         empty_df = spark.createDataFrame([], schema)
         
-        # Cria tabela Delta com otimizações habilitadas
+        # Cria tabela Delta com otimizacoes habilitadas
         (empty_df.write
          .format("delta")
          .option("delta.autoOptimize.optimizeWrite", "true")
          .option("delta.autoOptimize.autoCompact", "true")
          .saveAsTable(table_name))
         
-        print(f"✅ Tabela {table_name} criada com schema otimizado")
+        print(f"Tabela {table_name} criada com schema otimizado")
 
-    def process_single_file(file_info, system="OUTROS", file_type="datasus"):
-        """
-        Processa um arquivo individual com enriquecimento de metadados.
+def process_single_file(file_info, system="OUTROS", file_type="datasus"):
+    """
+    Processa um arquivo individual com enriquecimento de metadados.
     
     Args:
-        file_info: Informações do arquivo do Databricks
+        file_info: Informacoes do arquivo do Databricks
         system (str): Sistema de origem dos dados
         file_type (str): Tipo do arquivo (datasus/annex)
     
@@ -446,7 +446,7 @@ O pipeline gera métricas completas incluindo:
     try:
         metadata = extract_file_metadata(file_info.name)
         if not metadata:
-            print(f"❌ Metadados não extraídos para: {file_info.name}")
+            print(f"Metadados nao extraidos para: {file_info.name}")
             return None
         
         # Leitura do arquivo com fallback
@@ -469,7 +469,7 @@ O pipeline gera métricas completas incluindo:
             .withColumn("schema_version", lit("v1.0"))
         )
         
-        # Colunas específicas por tipo de arquivo
+        # Colunas especificas por tipo de arquivo
         if file_type == "datasus":
             enriched_df = (enriched_df
                 .withColumn("processing_year", lit(metadata['file_year']))
@@ -480,7 +480,7 @@ O pipeline gera métricas completas incluindo:
                 .withColumn("annex_category", lit(metadata.get('annex_category', 'others')))
             )
         
-        # Geração de hash único para o registro
+        # Geracao de hash unico para o registro
         hash_columns = concat_ws("|", 
                                lit(file_info.name),
                                lit(file_info.path),
@@ -488,27 +488,27 @@ O pipeline gera métricas completas incluindo:
         
         enriched_df = enriched_df.withColumn("record_id", sha2(hash_columns, 256))
         
-        # Hash do conteúdo para controle de changeset
+        # Hash do conteudo para controle de changeset
         enriched_df = enriched_df.withColumn("file_hash", 
                                            sha2(concat_ws("|", *enriched_df.columns), 256))
         
         return enriched_df
         
     except Exception as e:
-        print(f"❌ Erro no processamento de {file_info.name}: {e}")
+        print(f"Erro no processamento de {file_info.name}: {e}")
         return None
 
-    def check_already_processed(target_table, filename, file_hash):
-        """
-        Verifica se arquivo já foi processado para evitar duplicidades.
-        
+def check_already_processed(target_table, filename, file_hash):
+    """
+    Verifica se arquivo ja foi processado para evitar duplicidades.
+    
     Args:
         target_table (str): Tabela de destino
         filename (str): Nome do arquivo
-        file_hash (str): Hash do conteúdo do arquivo
+        file_hash (str): Hash do conteudo do arquivo
     
     Returns:
-        bool: True se arquivo já foi processado
+        bool: True se arquivo ja foi processado
     """
     try:
         if spark.catalog.tableExists(target_table):
@@ -524,17 +524,17 @@ O pipeline gera métricas completas incluindo:
     except:
         return False
 
-    def execute_system_ingestion(system, target_table, extensions):
-        """
-        Executa processo de ingestão completo para um sistema específico.
-        
+def execute_system_ingestion(system, target_table, extensions):
+    """
+    Executa processo de ingestao completo para um sistema especifico.
+    
     Args:
         system (str): Sistema a ser processado (DNSP/DOINF)
         target_table (str): Tabela de destino
-        extensions (list): Extensões de arquivo a processar
+        extensions (list): Extensoes de arquivo a processar
     
     Returns:
-        dict: Estatísticas detalhadas do processamento
+        dict: Estatisticas detalhadas do processamento
     """
     stats = {
         'total_files': 0,
@@ -548,11 +548,11 @@ O pipeline gera métricas completas incluindo:
     stats['total_files'] = len(system_files)
     
     if not system_files:
-        print(f"ℹ️  Nenhum arquivo encontrado para {system}")
+        print(f"Nenhum arquivo encontrado para {system}")
         return stats
     
-    print(f"\n🚀 Iniciando ingestão para {system}")
-    print(f"📁 Arquivos encontrados: {len(system_files)}")
+    print(f"Iniciando ingestao para {system}")
+    print(f"Arquivos encontrados: {len(system_files)}")
     
     # Garante que a tabela destino existe
     create_bronze_table(target_table)
@@ -565,11 +565,11 @@ O pipeline gera métricas completas incluindo:
                 stats['errors'] += 1
                 continue
             
-            # Obtém hash para verificação de duplicidade
+            # Obtem hash para verificacao de duplicidade
             sample_hash = processed_df.select("file_hash").first()[0]
             
             if check_already_processed(target_table, file.name, sample_hash):
-                print(f"⏭️  Arquivo {file.name} já processado - ignorando")
+                print(f"Arquivo {file.name} ja processado - ignorando")
                 stats['skipped_files'] += 1
                 continue
             
@@ -582,26 +582,26 @@ O pipeline gera métricas completas incluindo:
              .saveAsTable(target_table))
             
             stats['processed_files'] += 1
-            print(f"✅ {file.name} ingerido com sucesso")
+            print(f"{file.name} ingerido com sucesso")
             
         except Exception as e:
-            print(f"❌ Erro ao processar {file.name}: {e}")
+            print(f"Erro ao processar {file.name}: {e}")
             stats['errors'] += 1
     
     return stats
 
-    def execute_annexes_ingestion():
-        """
-        Executa ingestão de arquivos anexos (CSVs de suporte).
-        """
-        stats = {
-            'total_files': 0,
-            'processed_files': 0,
-            'skipped_files': 0,
-            'errors': 0
-        }
+def execute_annexes_ingestion():
+    """
+    Executa ingestao de arquivos anexos (CSVs de suporte).
+    """
+    stats = {
+        'total_files': 0,
+        'processed_files': 0,
+        'skipped_files': 0,
+        'errors': 0
+    }
     
-    # Arquivos anexos específicos para processamento
+    # Arquivos anexos especificos para processamento
     target_files = [
         "Distritos_novos_e_extintos.csv",
         "RELATORIO_DTB_BRASIL_2024_DISTRITOS.csv",
@@ -614,11 +614,11 @@ O pipeline gera métricas completas incluindo:
     stats['total_files'] = len(files_to_process)
     
     if not files_to_process:
-        print("ℹ️  Nenhum arquivo anexo encontrado")
+        print("Nenhum arquivo anexo encontrado")
         return stats
     
-    print(f"\n📎 Iniciando ingestão de anexos")
-    print(f"📁 Arquivos encontrados: {len(files_to_process)}")
+    print(f"Iniciando ingestao de anexos")
+    print(f"Arquivos encontrados: {len(files_to_process)}")
     
     create_bronze_table(BRONZE_ANEXOS_TABLE, is_annex=True)
     
@@ -632,7 +632,7 @@ O pipeline gera métricas completas incluindo:
             sample_hash = processed_df.select("file_hash").first()[0]
             
             if check_already_processed(BRONZE_ANEXOS_TABLE, file.name, sample_hash):
-                print(f"⏭️  Anexo {file.name} já processado - ignorando")
+                print(f"Anexo {file.name} ja processado - ignorando")
                 stats['skipped_files'] += 1
                 continue
             
@@ -644,33 +644,33 @@ O pipeline gera métricas completas incluindo:
              .saveAsTable(BRONZE_ANEXOS_TABLE))
             
             stats['processed_files'] += 1
-            print(f"✅ Anexo {file.name} ingerido com sucesso")
+            print(f"Anexo {file.name} ingerido com sucesso")
             
         except Exception as e:
-            print(f"❌ Erro ao processar anexo {file.name}: {e}")
+            print(f"Erro ao processar anexo {file.name}: {e}")
             stats['errors'] += 1
     
     return stats
 
-    def optimize_bronze_tables():
-        """
-        Otimiza as tabelas bronze após ingestão para performance.
-        """
-        tables = [BRONZE_SINASC_TABLE, BRONZE_SIM_TABLE, BRONZE_ANEXOS_TABLE]
+def optimize_bronze_tables():
+    """
+    Otimiza as tabelas bronze apos ingestao para performance.
+    """
+    tables = [BRONZE_SINASC_TABLE, BRONZE_SIM_TABLE, BRONZE_ANEXOS_TABLE]
     
     for table in tables:
         if spark.catalog.tableExists(table):
             try:
-                # Compactação e otimização de arquivos
+                # Compactacao e otimizacao de arquivos
                 spark.sql(f"OPTIMIZE {table}")
-                print(f"✅ Tabela {table} otimizada")
+                print(f"Tabela {table} otimizada")
                 
-                # Coleta estatísticas para o otimizador de queries
+                # Coleta estatisticas para o otimizador de queries
                 spark.sql(f"ANALYZE TABLE {table} COMPUTE STATISTICS")
                 
             except Exception as e:
-                print(f"⚠️  Erro ao otimizar {table}: {e}")
-        
+                print(f"Erro ao otimizar {table}: {e}")
+
 ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 
 # 🥈 CAMADA SILVER - DADOS CONFORMADOS E ENRIQUECIDOS
@@ -812,43 +812,43 @@ Esta documentação reflete com precisão a implementação real da camada Silve
 
 ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------        
         
-      # Databricks notebook source
-    # =============================================================================
-    # 🥈 CAMADA SILVER - DADOS CONFORMADOS E ENRIQUECIDOS
-    # =============================================================================
-    # Objetivo: Transformar dados brutos da camada Bronze em dados estruturados,
-    #           limpos e enriquecidos com regras de negócio e dimensões.
-    # Arquitetura: Medallion (Silver) com dados conformados para análise
-    # =============================================================================
-    
-    from pyspark.sql.functions import *
-    from pyspark.sql.types import *
-    from datetime import datetime
-    import json
-    
-    # =============================================================================
-    # CONFIGURAÇÕES GLOBAIS
-    # =============================================================================
-    
-    # Configurar database padrão
-    spark.sql("USE default")
-    
-    # Nomes das tabelas
-    SILVER_NASCIMENTOS_TABLE = "silver_nascimentos"
-    SILVER_OBITOS_TABLE = "silver_obitos"
-    DIM_MUNICIPIOS_TABLE = "dim_municipios"
-    DIM_DISTRITOS_TABLE = "dim_distritos"
-    
-    # =============================================================================
-    # FUNÇÕES AUXILIARES
-    # =============================================================================
-    
-    def check_bronze_tables():
-        """
-        Verifica a disponibilidade das tabelas bronze necessárias para o processamento.
+# Databricks notebook source
+# =============================================================================
+# CAMADA SILVER - DADOS CONFORMADOS E ENRIQUECIDOS
+# =============================================================================
+# Objetivo: Transformar dados brutos da camada Bronze em dados estruturados,
+#           limpos e enriquecidos com regras de negocio e dimensoes.
+# Arquitetura: Medallion (Silver) com dados conformados para analise
+# =============================================================================
+
+from pyspark.sql.functions import *
+from pyspark.sql.types import *
+from datetime import datetime
+import json
+
+# =============================================================================
+# CONFIGURACOES GLOBAIS
+# =============================================================================
+
+# Configurar database padrao
+spark.sql("USE default")
+
+# Nomes das tabelas
+SILVER_NASCIMENTOS_TABLE = "silver_nascimentos"
+SILVER_OBITOS_TABLE = "silver_obitos"
+DIM_MUNICIPIOS_TABLE = "dim_municipios"
+DIM_DISTRITOS_TABLE = "dim_distritos"
+
+# =============================================================================
+# FUNCOES AUXILIARES
+# =============================================================================
+
+def check_bronze_tables():
+    """
+    Verifica a disponibilidade das tabelas bronze necessarias para o processamento.
     
     Returns:
-        list: Lista de tabelas bronze disponíveis
+        list: Lista de tabelas bronze disponiveis
     """
     available_tables = []
     essential_tables = ["bronze_sinasc", "bronze_sim"]
@@ -858,35 +858,35 @@ Esta documentação reflete com precisão a implementação real da camada Silve
             df = spark.read.table(table)
             count = df.count()
             available_tables.append(table)
-            print(f"✅ Tabela {table} disponível ({count:,} registros)")
+            print(f"Tabela {table} disponivel ({count:,} registros)")
         except Exception as e:
-            print(f"❌ Tabela {table} indisponível: {str(e)}")
+            print(f"Tabela {table} indisponivel: {str(e)}")
     
     return available_tables
 
-    def create_geographic_dimensions():
-        """
-        Cria dimensões geográficas de municípios e distritos para enriquecimento dos dados.
-        Inclui dados básicos de municípios de referência para demonstração.
-        """
-        print("🗺️ Criando dimensões geográficas...")
+def create_geographic_dimensions():
+    """
+    Cria dimensoes geograficas de municipios e distritos para enriquecimento dos dados.
+    Inclui dados basicos de municipios de referencia para demonstracao.
+    """
+    print("Criando dimensoes geograficas...")
     
     try:
-        # Dados de municípios de referência para demonstração
+        # Dados de municipios de referencia para demonstracao
         municipalities_data = [
-            ("3550308", "São Paulo", "SP", "Sudeste", 12325232, "Metrópole"),
-            ("3304557", "Rio de Janeiro", "RJ", "Sudeste", 6747815, "Metrópole"),
-            ("3106200", "Belo Horizonte", "MG", "Sudeste", 2521564, "Metrópole"),
-            ("5300108", "Brasília", "DF", "Centro-Oeste", 3055149, "Metrópole"),
+            ("3550308", "São Paulo", "SP", "Sudeste", 12325232, "Metropole"),
+            ("3304557", "Rio de Janeiro", "RJ", "Sudeste", 6747815, "Metropole"),
+            ("3106200", "Belo Horizonte", "MG", "Sudeste", 2521564, "Metropole"),
+            ("5300108", "Brasilia", "DF", "Centro-Oeste", 3055149, "Metropole"),
             ("4106902", "Curitiba", "PR", "Sul", 1963726, "Grande"),
             ("4314902", "Porto Alegre", "RS", "Sul", 1483771, "Grande"),
             ("2611606", "Recife", "PE", "Nordeste", 1653461, "Grande"),
-            ("2304400", "Fortaleza", "CE", "Nordeste", 2669342, "Metrópole"),
-            ("1302603", "Manaus", "AM", "Norte", 2219580, "Metrópole"),
-            ("4205407", "Florianópolis", "SC", "Sul", 516524, "Médio")
+            ("2304400", "Fortaleza", "CE", "Nordeste", 2669342, "Metropole"),
+            ("1302603", "Manaus", "AM", "Norte", 2219580, "Metropole"),
+            ("4205407", "Florianopolis", "SC", "Sul", 516524, "Medio")
         ]
         
-        # Schema para dimensão de municípios
+        # Schema para dimensao de municipios
         municipalities_schema = StructType([
             StructField("codigo_municipio", StringType(), True),
             StructField("nome_municipio", StringType(), True),
@@ -896,18 +896,18 @@ Esta documentação reflete com precisão a implementação real da camada Silve
             StructField("tamanho_municipio", StringType(), True)
         ])
         
-        # Criar DataFrame de municípios
+        # Criar DataFrame de municipios
         dim_municipios = spark.createDataFrame(municipalities_data, municipalities_schema)
         
-        # Salvar dimensão de municípios
+        # Salvar dimensao de municipios
         (dim_municipios.write
          .format("delta")
          .mode("overwrite")
          .saveAsTable(DIM_MUNICIPIOS_TABLE))
         
-        print(f"✅ Dimensão {DIM_MUNICIPIOS_TABLE} criada com sucesso!")
+        print(f"Dimensao {DIM_MUNICIPIOS_TABLE} criada com sucesso!")
         
-        # Criar dimensão de distritos vazia (para completar o schema)
+        # Criar dimensao de distritos vazia (para completar o schema)
         districts_schema = StructType([
             StructField("Codigo_Municipio", StringType(), True),
             StructField("Distrito", StringType(), True),
@@ -921,26 +921,26 @@ Esta documentação reflete com precisão a implementação real da camada Silve
          .mode("overwrite")
          .saveAsTable(DIM_DISTRITOS_TABLE))
         
-        print(f"✅ Dimensão {DIM_DISTRITOS_TABLE} criada!")
+        print(f"Dimensao {DIM_DISTRITOS_TABLE} criada!")
         
     except Exception as e:
-        print(f"❌ Erro ao criar dimensões geográficas: {str(e)}")
+        print(f"Erro ao criar dimensoes geograficas: {str(e)}")
         raise
 
-    def process_births_data():
-        """
-        Processa e transforma dados de nascimentos da bronze_sinasc para silver_nascimentos.
-        Aplica limpeza, enriquecimento e regras de negócio específicas.
+def process_births_data():
+    """
+    Processa e transforma dados de nascimentos da bronze_sinasc para silver_nascimentos.
+    Aplica limpeza, enriquecimento e regras de negocio especificas.
     
     Returns:
         DataFrame: DataFrame processado com dados de nascimentos ou None em caso de erro
     """
-    print("👶 Processando dados de nascimentos...")
+    print("Processando dados de nascimentos...")
     
     try:
         # Ler dados brutos de nascimentos
         bronze_sinasc = spark.read.table("bronze_sinasc")
-        print(f"📊 Registros bronze SINASC: {bronze_sinasc.count():,}")
+        print(f"Registros bronze SINASC: {bronze_sinasc.count():,}")
         
         # Selecionar e renomear colunas relevantes
         silver_nascimentos = bronze_sinasc.select(
@@ -960,14 +960,14 @@ Esta documentação reflete com precisão a implementação real da camada Silve
             col("nome_arquivo").alias("nome_arquivo_origem")
         )
         
-        # Aplicar transformações e limpeza de dados
+        # Aplicar transformacoes e limpeza de dados
         silver_nascimentos = silver_nascimentos.transform(clean_births_data)
         
-        # Enriquecer com dimensão geográfica se disponível
+        # Enriquecer com dimensao geografica se disponivel
         if spark.catalog.tableExists(DIM_MUNICIPIOS_TABLE):
             silver_nascimentos = enrich_with_geography(silver_nascimentos)
         
-        # Aplicar regras de negócio e categorizações
+        # Aplicar regras de negocio e categorizacoes
         silver_nascimentos = silver_nascimentos.transform(apply_business_rules)
         
         # Limpeza final e garantia de qualidade
@@ -977,25 +977,25 @@ Esta documentação reflete com precisão a implementação real da camada Silve
             .filter(col("codigo_municipio_nascimento").isNotNull())
         )
         
-        print(f"📈 Registros após transformação: {silver_nascimentos.count():,}")
+        print(f"Registros apos transformacao: {silver_nascimentos.count():,}")
         
-        # Escrever tabela silver com otimizações
+        # Escrever tabela silver com otimizacoes
         (silver_nascimentos.write
          .format("delta")
          .mode("overwrite")
          .option("delta.autoOptimize.optimizeWrite", "true")
          .saveAsTable(SILVER_NASCIMENTOS_TABLE))
         
-        print(f"✅ Tabela {SILVER_NASCIMENTOS_TABLE} criada com sucesso!")
+        print(f"Tabela {SILVER_NASCIMENTOS_TABLE} criada com sucesso!")
         return silver_nascimentos
         
     except Exception as e:
-        print(f"❌ Erro no processamento de nascimentos: {str(e)}")
+        print(f"Erro no processamento de nascimentos: {str(e)}")
         return None
 
-    def clean_births_data(df):
-        """
-        Aplica limpeza e transformações básicas nos dados de nascimentos.
+def clean_births_data(df):
+    """
+    Aplica limpeza e transformacoes basicas nos dados de nascimentos.
     
     Args:
         df (DataFrame): DataFrame com dados brutos de nascimentos
@@ -1004,7 +1004,7 @@ Esta documentação reflete com precisão a implementação real da camada Silve
         DataFrame: DataFrame limpo e padronizado
     """
     return (df
-        # Padronizar códigos
+        # Padronizar codigos
         .withColumn("codigo_cnes", 
                    coalesce(col("codigo_cnes").cast("string"), lit("0000000")))
         .withColumn("codigo_municipio_nascimento", 
@@ -1016,7 +1016,7 @@ Esta documentação reflete com precisão a implementação real da camada Silve
                         to_date(col("data_nascimento_str"), "ddMMyyyy"))
                    .otherwise(lit(None)))
         
-        # Converter valores numéricos
+        # Converter valores numericos
         .withColumn("idade_mae", 
                    coalesce(expr("try_cast(idade_mae as int)"), lit(0)))
         .withColumn("peso_gramas", 
@@ -1026,19 +1026,19 @@ Esta documentação reflete com precisão a implementação real da camada Silve
         .withColumn("semanas_gestacao", 
                    coalesce(expr("try_cast(semanas_gestacao as int)"), lit(0)))
         
-        # Remover coluna temporária
+        # Remover coluna temporaria
         .drop("data_nascimento_str")
     )
 
-    def enrich_with_geography(df):
-        """
-        Enriquece dados com informações geográficas da dimensão de municípios.
+def enrich_with_geography(df):
+    """
+    Enriquece dados com informacoes geograficas da dimensao de municipios.
     
     Args:
         df (DataFrame): DataFrame com dados a serem enriquecidos
     
     Returns:
-        DataFrame: DataFrame enriquecido com dados geográficos
+        DataFrame: DataFrame enriquecido com dados geograficos
     """
     dim_municipios = spark.read.table(DIM_MUNICIPIOS_TABLE)
     
@@ -1069,44 +1069,44 @@ Esta documentação reflete com precisão a implementação real da camada Silve
         )
     )
 
-    def apply_business_rules(df):
-        """
-        Aplica regras de negócio e categorizações nos dados de nascimentos.
+def apply_business_rules(df):
+    """
+    Aplica regras de negocio e categorizacoes nos dados de nascimentos.
     
     Args:
         df (DataFrame): DataFrame com dados limpos
     
     Returns:
-        DataFrame: DataFrame com categorizações de negócio
+        DataFrame: DataFrame com categorizacoes de negocio
     """
     return (df
-        # Categorização de peso ao nascer
+        # Categorizacao de peso ao nascer
         .withColumn("categoria_peso",
-                   when(col("peso_gramas") < 1500, "Baixíssimo Peso")
+                   when(col("peso_gramas") < 1500, "Baixissimo Peso")
                    .when(col("peso_gramas") < 2500, "Baixo Peso")
                    .when(col("peso_gramas") >= 2500, "Peso Normal")
                    .otherwise("Ignorado"))
         
-        # Classificação de pré-natal
+        # Classificacao de pre-natal
         .withColumn("classificacao_pre_natal",
                    when(col("consultas_pre_natal") >= 7, "Adequado (7+ consultas)")
                    .when(col("consultas_pre_natal") >= 1, "Inadequado (<7 consultas)")
-                   .otherwise("Sem pré-natal"))
+                   .otherwise("Sem pre-natal"))
         
-        # Faixa etária da mãe
+        # Faixa etaria da mae
         .withColumn("faixa_etaria_mae",
                    when(col("idade_mae") < 20, "Menor de 20 anos")
                    .when(col("idade_mae") < 35, "20-34 anos")
                    .when(col("idade_mae") >= 35, "35+ anos")
                    .otherwise("Ignorado"))
         
-        # Classificação de gestação
+        # Classificacao de gestacao
         .withColumn("classificacao_gestacao",
-                   when(col("semanas_gestacao") < 37, "Pré-termo")
+                   when(col("semanas_gestacao") < 37, "Pre-termo")
                    .when(col("semanas_gestacao") <= 42, "Termo")
-                   .otherwise("Pós-termo"))
+                   .otherwise("Pos-termo"))
         
-        # Codificação de valores categóricos
+        # Codificacao de valores categoricos
         .withColumn("sexo", 
                    when(col("sexo") == "1", "Masculino")
                    .when(col("sexo") == "2", "Feminino")
@@ -1117,7 +1117,7 @@ Esta documentação reflete com precisão a implementação real da camada Silve
                    .when(col("raca_cor") == "2", "Preta")
                    .when(col("raca_cor") == "3", "Amarela")
                    .when(col("raca_cor") == "4", "Parda")
-                   .when(col("raca_cor") == "5", "Indígena")
+                   .when(col("raca_cor") == "5", "Indigena")
                    .otherwise("Ignorado"))
         
         .withColumn("escolaridade_mae",
@@ -1130,24 +1130,24 @@ Esta documentação reflete com precisão a implementação real da camada Silve
         
         .withColumn("tipo_parto", 
                    when(col("tipo_parto") == "1", "Vaginal")
-                   .when(col("tipo_parto") == "2", "Cesáreo")
+                   .when(col("tipo_parto") == "2", "Cesareo")
                    .otherwise("Ignorado"))
     )
 
-    def process_deaths_data():
-        """
-        Processa e transforma dados de óbitos da bronze_sim para silver_obitos.
-        Aplica limpeza básica e padronização dos dados.
+def process_deaths_data():
+    """
+    Processa e transforma dados de obitos da bronze_sim para silver_obitos.
+    Aplica limpeza basica e padronizacao dos dados.
     
     Returns:
-        DataFrame: DataFrame processado com dados de óbitos ou None em caso de erro
+        DataFrame: DataFrame processado com dados de obitos ou None em caso de erro
     """
-    print("😔 Processando dados de óbitos...")
+    print("Processando dados de obitos...")
     
     try:
-        # Ler dados brutos de óbitos
+        # Ler dados brutos de obitos
         bronze_sim = spark.read.table("bronze_sim")
-        print(f"📊 Registros bronze SIM: {bronze_sim.count():,}")
+        print(f"Registros bronze SIM: {bronze_sim.count():,}")
         
         # Selecionar e renomear colunas relevantes
         silver_obitos = bronze_sim.select(
@@ -1162,7 +1162,7 @@ Esta documentação reflete com precisão a implementação real da camada Silve
             col("nome_arquivo").alias("nome_arquivo_origem")
         )
         
-        # Aplicar transformações e limpeza
+        # Aplicar transformacoes e limpeza
         silver_obitos = (silver_obitos
             .withColumn("data_obito",
                        when(length(col("data_obito_str")) == 8,
@@ -1184,20 +1184,20 @@ Esta documentação reflete com precisão a implementação real da camada Silve
          .option("delta.autoOptimize.optimizeWrite", "true")
          .saveAsTable(SILVER_OBITOS_TABLE))
         
-        print(f"✅ Tabela {SILVER_OBITOS_TABLE} processada: {silver_obitos.count():,} registros")
+        print(f"Tabela {SILVER_OBITOS_TABLE} processada: {silver_obitos.count():,} registros")
         return silver_obitos
         
     except Exception as e:
-        print(f"❌ Erro no processamento de óbitos: {str(e)}")
+        print(f"Erro no processamento de obitos: {str(e)}")
         return None
 
-    def validate_silver_tables():
-        """
-        Valida as tabelas silver criadas e exibe estatísticas de qualidade.
-        """
-        print("\n" + "="*50)
-        print("✅ VALIDAÇÃO DAS TABELAS SILVER")
-        print("="*50)
+def validate_silver_tables():
+    """
+    Valida as tabelas silver criadas e exibe estatisticas de qualidade.
+    """
+    print("\n" + "="*50)
+    print("VALIDACAO DAS TABELAS SILVER")
+    print("="*50)
     
     validation_results = {}
     
@@ -1207,17 +1207,17 @@ Esta documentação reflete com precisão a implementação real da camada Silve
             df = spark.read.table(table_name)
             count = df.count()
             validation_results[table_name] = {
-                "status": "✅ DISPONÍVEL",
+                "status": "DISPONIVEL",
                 "records": f"{count:,}",
                 "columns": len(df.columns)
             }
         except Exception as e:
             validation_results[table_name] = {
-                "status": "❌ INDISPONÍVEL",
+                "status": "INDISPONIVEL",
                 "error": str(e)
             }
     
-    # Exibir resultados da validação
+    # Exibir resultados da validacao
     for table, result in validation_results.items():
         if "records" in result:
             print(f"{result['status']} {table}: {result['records']} registros, {result['columns']} colunas")
@@ -1226,58 +1226,58 @@ Esta documentação reflete com precisão a implementação real da camada Silve
     
     return validation_results
 
-    # =============================================================================
-    # EXECUÇÃO PRINCIPAL
-    # =============================================================================
+# =============================================================================
+# EXECUCAO PRINCIPAL
+# =============================================================================
+
+def main():
+    """
+    Funcao principal de execucao do pipeline Silver.
+    Orquestra todo o processo de transformacao e validacao.
+    """
+    print("=" * 80)
+    print("PIPELINE DE TRANSFORMACAO - CAMADA SILVER")
+    print("=" * 80)
     
-    def main():
-        """
-        Função principal de execução do pipeline Silver.
-        Orquestra todo o processo de transformação e validação.
-        """
-        print("=" * 80)
-        print("🏗️  PIPELINE DE TRANSFORMAÇÃO - CAMADA SILVER")
-        print("=" * 80)
-        
-    # Verificar tabelas bronze disponíveis
-    print("🔍 Verificando tabelas bronze...")
+    # Verificar tabelas bronze disponiveis
+    print("Verificando tabelas bronze...")
     bronze_tables = check_bronze_tables()
     
     if not bronze_tables:
-        print("❌ Nenhuma tabela bronze disponível. Abortando processamento.")
+        print("Nenhuma tabela bronze disponivel. Abortando processamento.")
         return
     
-    # Criar dimensões geográficas
-    print("\n🗺️ Criando dimensões geográficas...")
+    # Criar dimensoes geograficas
+    print("\nCriando dimensoes geograficas...")
     create_geographic_dimensions()
     
-    # Processar nascimentos (se bronze_sinasc disponível)
+    # Processar nascimentos (se bronze_sinasc disponivel)
     if "bronze_sinasc" in bronze_tables:
         print("\n" + "="*50)
-        print("👶 PROCESSANDO NASCIMENTOS")
+        print("PROCESSANDO NASCIMENTOS")
         print("="*50)
         births_result = process_births_data()
     else:
-        print("\n⚠️  bronze_sinasc não disponível - pulando processamento de nascimentos")
+        print("\n bronze_sinasc nao disponivel - pulando processamento de nascimentos")
     
-    # Processar óbitos (se bronze_sim disponível)
+    # Processar obitos (se bronze_sim disponivel)
     if "bronze_sim" in bronze_tables:
         print("\n" + "="*50)
-        print("😔 PROCESSANDO ÓBITOS")
+        print("PROCESSANDO OBITOS")
         print("="*50)
         deaths_result = process_deaths_data()
     else:
-        print("\n⚠️  bronze_sim não disponível - pulando processamento de óbitos")
+        print("\n bronze_sim nao disponivel - pulando processamento de obitos")
     
-    # Validação final
+    # Validacao final
     validation = validate_silver_tables()
     
-    # Relatório de execução - VERIFICAÇÃO SIMPLIFICADA
+    # Relatorio de execucao - VERIFICACAO SIMPLIFICADA
     print("\n" + "="*80)
-    print("📊 RELATÓRIO DE EXECUÇÃO - SILVER")
+    print("RELATORIO DE EXECUCAO - SILVER")
     print("="*80)
     
-    # Verificação simples baseada na existência das tabelas
+    # Verificacao simples baseada na existencia das tabelas
     silver_tables = [SILVER_NASCIMENTOS_TABLE, SILVER_OBITOS_TABLE]
     success_count = 0
     
@@ -1285,35 +1285,35 @@ Esta documentação reflete com precisão a implementação real da camada Silve
         try:
             spark.read.table(table).count()
             success_count += 1
-            print(f"✅ {table}: Disponível")
+            print(f"{table}: Disponivel")
         except:
-            print(f"❌ {table}: Indisponível")
+            print(f"{table}: Indisponivel")
     
-    print(f"\n✅ Tabelas processadas com sucesso: {success_count}/{len(silver_tables)}")
+    print(f"\nTabelas processadas com sucesso: {success_count}/{len(silver_tables)}")
     
     if success_count == len(silver_tables):
-        print("🎉 TRANSFORMAÇÃO SILVER CONCLUÍDA COM SUCESSO!")
+        print("TRANSFORMACAO SILVER CONCLUIDA COM SUCESSO!")
     else:
-        print("⚠️  TRANSFORMAÇÃO SILVER CONCLUÍDA COM AVISOS!")
+        print("TRANSFORMACAO SILVER CONCLUIDA COM AVISOS!")
     
     # Exibir amostras dos dados processados
     try:
         if spark.catalog.tableExists(SILVER_NASCIMENTOS_TABLE):
-            print(f"\n📋 Amostra de {SILVER_NASCIMENTOS_TABLE}:")
+            print(f"\nAmostra de {SILVER_NASCIMENTOS_TABLE}:")
             spark.read.table(SILVER_NASCIMENTOS_TABLE).limit(3).show()
     except:
-        print(f"\n⚠️  Não foi possível exibir amostra de {SILVER_NASCIMENTOS_TABLE}")
+        print(f"\nNao foi possivel exibir amostra de {SILVER_NASCIMENTOS_TABLE}")
     
     try:
         if spark.catalog.tableExists(SILVER_OBITOS_TABLE):
-            print(f"\n📋 Amostra de {SILVER_OBITOS_TABLE}:")
+            print(f"\nAmostra de {SILVER_OBITOS_TABLE}:")
             spark.read.table(SILVER_OBITOS_TABLE).limit(3).show()
     except:
-        print(f"\n⚠️  Não foi possível exibir amostra de {SILVER_OBITOS_TABLE}")
+        print(f"\nNao foi possivel exibir amostra de {SILVER_OBITOS_TABLE}")
 
-    # Execução principal
-    if __name__ == "__main__":
-        main()
+# Execucao principal
+if __name__ == "__main__":
+    main()
             
 ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 ````
@@ -1465,61 +1465,60 @@ GROUP BY regiao
 **Granularidade:** Mensal por estabelecimento de saúde
 ```
 -----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+# Databricks notebook source
+# =============================================================================
+# CAMADA GOLD - MODELO DIMENSIONAL STAR SCHEMA
+# =============================================================================
+# Objetivo: Criar modelo dimensional para analise de indicadores de saúde
+#           materno-infantil com dados agregados mensais
+# Arquitetura: Star Schema com fato mensal e dimensoes relacionais
+# =============================================================================
 
-    # Databricks notebook source
-    # =============================================================================
-    # 🥇 CAMADA GOLD - MODELO DIMENSIONAL STAR SCHEMA
-    # =============================================================================
-    # Objetivo: Criar modelo dimensional para análise de indicadores de saúde
-    #           materno-infantil com dados agregados mensais
-    # Arquitetura: Star Schema com fato mensal e dimensões relacionais
-    # =============================================================================
+from pyspark.sql.functions import year, month, col, count, when, sum as spark_sum, coalesce, lit
+from pyspark.sql.types import *
+
+# =============================================================================
+# CONFIGURACOES GLOBAIS
+# =============================================================================
+
+# Configurar database padrao
+spark.sql("USE default")
+
+# Nomes das tabelas Gold
+FATO_SAUDE_TABLE = "gold_fato_saude_mensal_cnes"
+INDICADORES_VIEW = "gold_indicadores_saude"
+DIM_TEMPO_TABLE = "gold_dim_tempo"
+DIM_CNES_TABLE = "gold_dim_cnes"
+DIM_MUNICIPIO_TABLE = "gold_dim_municipio"
+
+# =============================================================================
+# FUNCOES PRINCIPAIS
+# =============================================================================
+
+def create_gold_fact_table():
+    """
+    Cria tabela fato principal com indicadores de saúde agregados mensalmente.
+    Combina dados de nascimentos e obitos para analise integrada.
     
-    from pyspark.sql.functions import year, month, col, count, when, sum as spark_sum, coalesce, lit
-    from pyspark.sql.types import *
-    
-    # =============================================================================
-    # CONFIGURAÇÕES GLOBAIS
-    # =============================================================================
-    
-    # Configurar database padrão
-    spark.sql("USE default")
-    
-    # Nomes das tabelas Gold
-    FATO_SAUDE_TABLE = "gold_fato_saude_mensal_cnes"
-    INDICADORES_VIEW = "gold_indicadores_saude"
-    DIM_TEMPO_TABLE = "gold_dim_tempo"
-    DIM_CNES_TABLE = "gold_dim_cnes"
-    DIM_MUNICIPIO_TABLE = "gold_dim_municipio"
-    
-    # =============================================================================
-    # FUNÇÕES PRINCIPAIS
-    # =============================================================================
-    
-    def create_gold_fact_table():
-        """
-        Cria tabela fato principal com indicadores de saúde agregados mensalmente.
-        Combina dados de nascimentos e óbitos para análise integrada.
-        
     Returns:
         DataFrame: Tabela fato criada ou None em caso de erro
     """
-    print("🏗️ Criando tabela fato Gold...")
+    print("Criando tabela fato Gold...")
     
     try:
         # Carregar tabelas silver
         births_df = spark.read.table("silver_nascimentos")
-        print(f"📊 Tabela silver_nascimentos carregada: {births_df.count():,} registros")
+        print(f"Tabela silver_nascimentos carregada: {births_df.count():,} registros")
         
-        # Verificar e carregar óbitos se disponível
+        # Verificar e carregar obitos se disponivel
         deaths_available = spark.catalog.tableExists("silver_obitos")
         if deaths_available:
             deaths_df = spark.read.table("silver_obitos")
             deaths_count = deaths_df.count()
-            print(f"📊 Tabela silver_obitos carregada: {deaths_count:,} registros")
+            print(f"Tabela silver_obitos carregada: {deaths_count:,} registros")
         else:
-            print("⚠️ Tabela silver_obitos não encontrada, criando estrutura vazia")
-            # Schema para dados de óbitos
+            print("Tabela silver_obitos nao encontrada, criando estrutura vazia")
+            # Schema para dados de obitos
             deaths_schema = StructType([
                 StructField("codigo_cnes", StringType(), True),
                 StructField("codigo_municipio_obito", StringType(), True),
@@ -1533,7 +1532,7 @@ GROUP BY regiao
             ])
             deaths_df = spark.createDataFrame([], deaths_schema)
         
-        # Agregações de nascimentos
+        # Agregacoes de nascimentos
         births_agg = (births_df
             .withColumn("ano_mes", (year(col("data_nascimento")) * 100 + month(col("data_nascimento"))))
             .groupBy("ano_mes", "codigo_cnes", "codigo_municipio_nascimento")
@@ -1541,21 +1540,21 @@ GROUP BY regiao
                 count("*").alias("total_nascidos_vivos"),
                 spark_sum(when(col("consultas_pre_natal") >= 7, 1).otherwise(0)).alias("nascidos_7_consultas"),
                 spark_sum(when(col("categoria_peso") == "Baixo Peso", 1).otherwise(0)).alias("nascidos_baixo_peso"),
-                spark_sum(when(col("categoria_peso") == "Baixíssimo Peso", 1).otherwise(0)).alias("nascidos_baixissimo_peso"),
-                spark_sum(when(col("tipo_parto") == "Cesáreo", 1).otherwise(0)).alias("nascidos_partos_cesarea"),
+                spark_sum(when(col("categoria_peso") == "Baixissimo Peso", 1).otherwise(0)).alias("nascidos_baixissimo_peso"),
+                spark_sum(when(col("tipo_parto") == "Cesareo", 1).otherwise(0)).alias("nascidos_partos_cesarea"),
                 spark_sum(when(col("faixa_etaria_mae") == "Menor de 20 anos", 1).otherwise(0)).alias("nascidos_maes_adolescentes"),
-                spark_sum(when(col("classificacao_gestacao") == "Pré-termo", 1).otherwise(0)).alias("nascidos_pre_termo"),
+                spark_sum(when(col("classificacao_gestacao") == "Pre-termo", 1).otherwise(0)).alias("nascidos_pre_termo"),
                 spark_sum(when(col("classificacao_pre_natal") == "Adequado (7+ consultas)", 1).otherwise(0)).alias("nascidos_prenatal_adequado")
             )
         )
         
-        # Agregações de óbitos (se houver dados)
+        # Agregacoes de obitos (se houver dados)
         if deaths_df.count() > 0 and "data_obito" in deaths_df.columns:
             deaths_agg = (deaths_df
                 .withColumn("ano_mes", (year(col("data_obito")) * 100 + month(col("data_obito"))))
                 .withColumn("codigo_municipio_ocorrencia", col("codigo_municipio_obito"))
                 
-                # Classificação de óbitos por idade
+                # Classificacao de obitos por idade
                 .withColumn("tipo_obito", 
                            when(col("idade") < 1, "Infantil")
                            .when((col("idade") >= 1) & (col("idade") <= 4), "1-4 anos")
@@ -1570,7 +1569,7 @@ GROUP BY regiao
                 )
             )
         else:
-            # Estrutura vazia para óbitos
+            # Estrutura vazia para obitos
             deaths_agg_schema = StructType([
                 StructField("ano_mes", IntegerType(), True),
                 StructField("codigo_cnes", StringType(), True),
@@ -1607,7 +1606,7 @@ GROUP BY regiao
             col("total_obitos_maternos")
         )
         
-        # Join completo entre nascimentos e óbitos
+        # Join completo entre nascimentos e obitos
         fact_table = (births_prepared
             .join(deaths_prepared,
                   (col("ano_mes_nasc") == col("ano_mes_obito")) &
@@ -1636,9 +1635,9 @@ GROUP BY regiao
             )
         )
         
-        print(f"📈 Tabela fato criada: {fact_table.count():,} registros")
+        print(f"Tabela fato criada: {fact_table.count():,} registros")
         
-        # Escrever tabela fato com otimizações
+        # Escrever tabela fato com otimizacoes
         (fact_table.write
          .format("delta")
          .mode("overwrite")
@@ -1646,24 +1645,24 @@ GROUP BY regiao
          .option("overwriteSchema", "true")
          .saveAsTable(FATO_SAUDE_TABLE))
         
-        print(f"✅ Tabela {FATO_SAUDE_TABLE} criada com sucesso!")
+        print(f"Tabela {FATO_SAUDE_TABLE} criada com sucesso!")
         return fact_table
         
     except Exception as e:
-        print(f"❌ Erro ao criar tabela fato: {str(e)}")
+        print(f"Erro ao criar tabela fato: {str(e)}")
         import traceback
         traceback.print_exc()
         return None
 
-    def create_indicators_view():
-        """
-        Cria view materializada com indicadores de saúde calculados.
-        Inclui taxas, percentuais e métricas de qualidade.
+def create_indicators_view():
+    """
+    Cria view materializada com indicadores de saúde calculados.
+    Inclui taxas, percentuais e metricas de qualidade.
     
     Returns:
         bool: True se a view foi criada com sucesso
     """
-    print("📊 Criando view de indicadores...")
+    print("Criando view de indicadores...")
     
     try:
         # Remover view existente se houver
@@ -1689,7 +1688,7 @@ GROUP BY regiao
             total_obitos_neonatais,
             total_obitos_maternos,
             
-            -- Indicadores de qualidade do pré-natal
+            -- Indicadores de qualidade do pre-natal
             CASE 
                 WHEN total_nascidos_vivos > 0 THEN ROUND((nascidos_7_consultas / total_nascidos_vivos) * 100, 2)
                 ELSE 0 
@@ -1727,7 +1726,7 @@ GROUP BY regiao
                 ELSE 0 
             END AS perc_partos_cesarea,
             
-            -- Indicadores sociodemográficos
+            -- Indicadores sociodemograficos
             CASE 
                 WHEN total_nascidos_vivos > 0 THEN ROUND((nascidos_maes_adolescentes / total_nascidos_vivos) * 100, 2)
                 ELSE 0 
@@ -1755,7 +1754,7 @@ GROUP BY regiao
                 ELSE 0 
             END AS perc_obitos_neonatais_do_total_infantil,
             
-            -- Razão de mortalidade
+            -- Razao de mortalidade
             CASE 
                 WHEN total_obitos > 0 THEN ROUND((total_obitos_infantis / total_obitos) * 100, 2)
                 ELSE 0 
@@ -1765,25 +1764,25 @@ GROUP BY regiao
         WHERE total_nascidos_vivos > 0 OR total_obitos > 0
         """)
         
-        print(f"✅ View {INDICADORES_VIEW} criada com sucesso!")
+        print(f"View {INDICADORES_VIEW} criada com sucesso!")
         return True
         
     except Exception as e:
-        print(f"❌ Erro ao criar view: {str(e)}")
+        print(f"Erro ao criar view: {str(e)}")
         return False
 
-    def create_gold_dimensions():
-        """
-        Cria dimensões para o modelo dimensional star schema.
-        Inclui dimensões de tempo, estabelecimentos e municípios.
+def create_gold_dimensions():
+    """
+    Cria dimensoes para o modelo dimensional star schema.
+    Inclui dimensoes de tempo, estabelecimentos e municipios.
     
     Returns:
-        bool: True se todas as dimensões foram criadas com sucesso
+        bool: True se todas as dimensoes foram criadas com sucesso
     """
-    print("🗂️ Criando dimensões Gold...")
+    print("Criando dimensoes Gold...")
     
     try:
-        # Dimensão de tempo
+        # Dimensao de tempo
         spark.sql(f"""
         CREATE OR REPLACE TABLE {DIM_TEMPO_TABLE} AS
         SELECT DISTINCT
@@ -1795,9 +1794,9 @@ GROUP BY regiao
         FROM {FATO_SAUDE_TABLE}
         WHERE sk_tempo IS NOT NULL
         """)
-        print(f"✅ Dimensão {DIM_TEMPO_TABLE} criada")
+        print(f"Dimensao {DIM_TEMPO_TABLE} criada")
         
-        # Dimensão de estabelecimentos (CNES)
+        # Dimensao de estabelecimentos (CNES)
         spark.sql(f"""
         CREATE OR REPLACE TABLE {DIM_CNES_TABLE} AS
         SELECT DISTINCT
@@ -1806,9 +1805,9 @@ GROUP BY regiao
         FROM {FATO_SAUDE_TABLE}
         WHERE sk_cnes IS NOT NULL AND sk_cnes != '0000000'
         """)
-        print(f"✅ Dimensão {DIM_CNES_TABLE} criada")
+        print(f"Dimensao {DIM_CNES_TABLE} criada")
         
-        # Dimensão de municípios
+        # Dimensao de municipios
         spark.sql(f"""
         CREATE OR REPLACE TABLE {DIM_MUNICIPIO_TABLE} AS
         SELECT DISTINCT
@@ -1821,22 +1820,22 @@ GROUP BY regiao
         LEFT JOIN dim_municipios m ON f.sk_municipio = m.codigo_municipio
         WHERE sk_municipio IS NOT NULL
         """)
-        print(f"✅ Dimensão {DIM_MUNICIPIO_TABLE} criada")
+        print(f"Dimensao {DIM_MUNICIPIO_TABLE} criada")
         
         return True
         
     except Exception as e:
-        print(f"❌ Erro ao criar dimensões: {str(e)}")
+        print(f"Erro ao criar dimensoes: {str(e)}")
         return False
 
-    def validate_gold_layer():
-        """
-        Valida toda a camada Gold criada, verificando tabelas e mostrando estatísticas.
+def validate_gold_layer():
+    """
+    Valida toda a camada Gold criada, verificando tabelas e mostrando estatisticas.
     
     Returns:
-        dict: Resultados da validação de cada objeto
+        dict: Resultados da validacao de cada objeto
     """
-    print("🔍 Validando camada Gold...")
+    print("Validando camada Gold...")
     
     validation_results = {}
     gold_objects = [
@@ -1853,50 +1852,50 @@ GROUP BY regiao
                 df = spark.read.table(obj)
                 count = df.count()
                 validation_results[obj] = {
-                    "status": "✅ DISPONÍVEL",
+                    "status": "DISPONIVEL",
                     "records": count,
                     "columns": len(df.columns)
                 }
-                print(f"✅ {obj}: {count:,} registros, {len(df.columns)} colunas")
+                print(f"{obj}: {count:,} registros, {len(df.columns)} colunas")
             else:
                 # Para views
                 df = spark.sql(f"SELECT COUNT(*) as count FROM {obj}")
                 count = df.collect()[0]["count"]
                 validation_results[obj] = {
-                    "status": "✅ DISPONÍVEL", 
+                    "status": "DISPONIVEL", 
                     "records": count,
                     "columns": "N/A"
                 }
-                print(f"✅ {obj}: {count:,} registros")
+                print(f"{obj}: {count:,} registros")
         except Exception as e:
             validation_results[obj] = {
-                "status": "❌ INDISPONÍVEL",
+                "status": "INDISPONIVEL",
                 "error": str(e)
             }
-            print(f"❌ {obj}: {str(e)}")
+            print(f"{obj}: {str(e)}")
     
     return validation_results
-    
-    # =============================================================================
-    # EXECUÇÃO PRINCIPAL
-    # =============================================================================
-    
-    def main():
-        """
-        Função principal de execução do pipeline Gold.
-        Orquestra a criação do modelo dimensional completo.
-        """
-        print("=" * 80)
-        print("🌟 PIPELINE DE CRIAÇÃO - CAMADA GOLD")
-        print("=" * 80)
+
+# =============================================================================
+# EXECUCAO PRINCIPAL
+# =============================================================================
+
+def main():
+    """
+    Funcao principal de execucao do pipeline Gold.
+    Orquestra a criacao do modelo dimensional completo.
+    """
+    print("=" * 80)
+    print("PIPELINE DE CRIACAO - CAMADA GOLD")
+    print("=" * 80)
     
     # Limpar objetos existentes
     try:
         spark.sql(f"DROP TABLE IF EXISTS {FATO_SAUDE_TABLE}")
         spark.sql(f"DROP VIEW IF EXISTS {INDICADORES_VIEW}")
-        print("🧹 Objetos anteriores removidos")
+        print("Objetos anteriores removidos")
     except Exception as e:
-        print(f"⚠️  Aviso ao limpar objetos: {e}")
+        print(f"Aviso ao limpar objetos: {e}")
     
     # Criar tabela fato
     fact_table = create_gold_fact_table()
@@ -1905,12 +1904,12 @@ GROUP BY regiao
         # Criar view de indicadores
         create_indicators_view()
         
-        # Criar dimensões
+        # Criar dimensoes
         create_gold_dimensions()
         
-        # Validação final - VERIFICAÇÃO SIMPLIFICADA
+        # Validacao final - VERIFICACAO SIMPLIFICADA
         print("\n" + "="*80)
-        print("📋 RELATÓRIO DE EXECUÇÃO - GOLD")
+        print("RELATORIO DE EXECUCAO - GOLD")
         print("="*80)
         
         gold_objects = [
@@ -1927,50 +1926,52 @@ GROUP BY regiao
                 if "fato" in obj or "dim" in obj:
                     df = spark.read.table(obj)
                     count = df.count()
-                    print(f"✅ {obj}: Disponível ({count:,} registros)")
+                    print(f"{obj}: Disponivel ({count:,} registros)")
                     success_count += 1
                 else:
                     # Para views
                     df = spark.sql(f"SELECT COUNT(*) as count FROM {obj}")
                     count = df.collect()[0]["count"]
-                    print(f"✅ {obj}: Disponível ({count:,} registros)")
+                    print(f"{obj}: Disponivel ({count:,} registros)")
                     success_count += 1
             except Exception as e:
-                print(f"❌ {obj}: Indisponível - {str(e)}")
+                print(f"{obj}: Indisponivel - {str(e)}")
         
         total_count = len(gold_objects)
         
-        print(f"\n✅ Objetos criados com sucesso: {success_count}/{total_count}")
+        print(f"\nObjetos criados com sucesso: {success_count}/{total_count}")
         
         if success_count == total_count:
-            print("🎉 CAMADA GOLD CRIADA COM SUCESSO!")
+            print("CAMADA GOLD CRIADA COM SUCESSO!")
         else:
-            print("⚠️  CAMADA GOLD CRIADA COM AVISOS!")
+            print("CAMADA GOLD CRIADA COM AVISOS!")
         
         # Exemplo de consultas
         print("\n" + "="*80)
-        print("💡 EXEMPLOS DE CONSULTAS DISPONÍVEIS:")
+        print("EXEMPLOS DE CONSULTAS DISPONIVEIS:")
         print("="*80)
         
         examples = [
-            "📌 Top 10 municípios com maior taxa de cesárea",
-            "📌 Evolução mensal da mortalidade infantil", 
-            "📌 Qualidade do pré-natal por região",
-            "📌 Taxa de mortalidade materna por estabelecimento",
-            "📌 Percentual de prematuridade por período"
+            "Top 10 municipios com maior taxa de cesarea",
+            "Evolucao mensal da mortalidade infantil", 
+            "Qualidade do pre-natal por regiao",
+            "Taxa de mortalidade materna por estabelecimento",
+            "Percentual de prematuridade por periodo"
         ]
         
         for example in examples:
             print(f"   {example}")
         
-        print(f"\n🏆 Modelo dimensional pronto para análise!")
+        print(f"\nModelo dimensional pronto para analise!")
         
     else:
-        print("❌ Falha na criação da tabela fato. Processamento interrompido.")
+        print("Falha na criacao da tabela fato. Processamento interrompido.")
 
-    # Execução principal
-    if __name__ == "__main__":
-        main()
+# Execucao principal
+if __name__ == "__main__":
+    main()
+    
+        
 ------------------------------------------------------------------------------------------------------
     # Databricks notebook source
     # =============================================================================
