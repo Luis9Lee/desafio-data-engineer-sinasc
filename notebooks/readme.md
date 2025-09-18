@@ -136,52 +136,52 @@ O pipeline gera métricas completas incluindo:
 
 -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
     # Databricks notebook source
-# =============================================================================
-# CAMADA BRONZE - PIPELINE DE INGESTAO DE DADOS DO DATASUS
-# =============================================================================
-# Objetivo: Ingestao robusta de dados do DATASUS (SINASC e SIM) com tratamento de
-#           erros, controle de qualidade e metadados para rastreabilidade.
-# Arquitetura: Medallion (Bronze) com schema evolution e carga incremental
-# =============================================================================
-
-# LIBRARIES IMPORT
-from pyspark.sql.functions import lit, current_timestamp, col, sha2, concat_ws
-from pyspark.sql.types import StructType, StructField, StringType, TimestampType, LongType
-import re
-from datetime import datetime
-import os
-
-# =============================================================================
-# GLOBAL CONFIGURATION
-# =============================================================================
-# Configuracoes globais para todo o pipeline
-spark.sql("USE default")  # Define database padrao
-
-# Path configuration for Databricks environment
-VOLUME_BASE_PATH = "/Volumes/workspace/default/data/"
-
-# Target table names
-BRONZE_SINASC_TABLE = "bronze_sinasc"
-BRONZE_SIM_TABLE = "bronze_sim"
-BRONZE_ANEXOS_TABLE = "bronze_anexos"
-
-# =============================================================================
-# HELPER FUNCTIONS
-# =============================================================================
-
-def setup_environment():
-    """
-    Configura otimizacoes do ambiente Spark para melhor performance no processamento
-    de arquivos e gestao de recursos.
-    """
-    spark.conf.set("spark.sql.adaptive.enabled", "true")
-    spark.conf.set("spark.sql.adaptive.coalescePartitions.enabled", "true")
-    spark.conf.set("spark.sql.adaptive.skewJoin.enabled", "true")
-    print("Ambiente Spark otimizado para processamento de dados")
-
-def list_volume_files(file_extensions=None):
-    """
-    Lista arquivos disponiveis no volume com filtro por extensao.
+    # =============================================================================
+    # CAMADA BRONZE - PIPELINE DE INGESTAO DE DADOS DO DATASUS
+    # =============================================================================
+    # Objetivo: Ingestao robusta de dados do DATASUS (SINASC e SIM) com tratamento de
+    #           erros, controle de qualidade e metadados para rastreabilidade.
+    # Arquitetura: Medallion (Bronze) com schema evolution e carga incremental
+    # =============================================================================
+    
+    # LIBRARIES IMPORT
+    from pyspark.sql.functions import lit, current_timestamp, col, sha2, concat_ws
+    from pyspark.sql.types import StructType, StructField, StringType, TimestampType, LongType
+    import re
+    from datetime import datetime
+    import os
+    
+    # =============================================================================
+    # GLOBAL CONFIGURATION
+    # =============================================================================
+    # Configuracoes globais para todo o pipeline
+    spark.sql("USE default")  # Define database padrao
+    
+    # Path configuration for Databricks environment
+    VOLUME_BASE_PATH = "/Volumes/workspace/default/data/"
+    
+    # Target table names
+    BRONZE_SINASC_TABLE = "bronze_sinasc"
+    BRONZE_SIM_TABLE = "bronze_sim"
+    BRONZE_ANEXOS_TABLE = "bronze_anexos"
+    
+    # =============================================================================
+    # HELPER FUNCTIONS
+    # =============================================================================
+    
+    def setup_environment():
+        """
+        Configura otimizacoes do ambiente Spark para melhor performance no processamento
+        de arquivos e gestao de recursos.
+        """
+        spark.conf.set("spark.sql.adaptive.enabled", "true")
+        spark.conf.set("spark.sql.adaptive.coalescePartitions.enabled", "true")
+        spark.conf.set("spark.sql.adaptive.skewJoin.enabled", "true")
+        print("Ambiente Spark otimizado para processamento de dados")
+    
+    def list_volume_files(file_extensions=None):
+        """
+        Lista arquivos disponiveis no volume com filtro por extensao.
     
     Args:
         file_extensions (list): Lista de extensoes para filtrar (ex: ['.dbc', '.csv'])
@@ -207,9 +207,9 @@ def list_volume_files(file_extensions=None):
         print(f"Erro ao listar arquivos: {e}")
         return []
 
-def extract_file_metadata(filename):
-    """
-    Extrai metadados estruturados do nome do arquivo conforme padroes DATASUS.
+    def extract_file_metadata(filename):
+        """
+        Extrai metadados estruturados do nome do arquivo conforme padroes DATASUS.
     
     Args:
         filename (str): Nome do arquivo para extracao de metadados
@@ -344,10 +344,10 @@ def read_file_with_fallback(file_path, filename, extension):
         print(f"Erro critico ao processar {filename}: {e}")
         return None
 
-def create_fallback_dataframe(file_path, filename):
-    """
-    Cria DataFrame de fallback para arquivos corrompidos ou com problemas.
-    
+    def create_fallback_dataframe(file_path, filename):
+        """
+        Cria DataFrame de fallback para arquivos corrompidos ou com problemas.
+        
     Args:
         file_path (str): Caminho do arquivo problematico
         filename (str): Nome do arquivo para registro
@@ -379,9 +379,9 @@ def create_fallback_dataframe(file_path, filename):
         ])
         return spark.createDataFrame([(filename, "processing_error")], schema)
 
-def create_bronze_table(table_name, is_annex=False):
-    """
-    Cria tabela Delta Lake na camada Bronze com schema otimizado.
+    def create_bronze_table(table_name, is_annex=False):
+        """
+        Cria tabela Delta Lake na camada Bronze com schema otimizado.
     
     Args:
         table_name (str): Nome da tabela a ser criada
@@ -431,9 +431,9 @@ def create_bronze_table(table_name, is_annex=False):
         
         print(f"Tabela {table_name} criada com schema otimizado")
 
-def process_single_file(file_info, system="OUTROS", file_type="datasus"):
-    """
-    Processa um arquivo individual com enriquecimento de metadados.
+    def process_single_file(file_info, system="OUTROS", file_type="datasus"):
+        """
+        Processa um arquivo individual com enriquecimento de metadados.
     
     Args:
         file_info: Informacoes do arquivo do Databricks
@@ -498,9 +498,9 @@ def process_single_file(file_info, system="OUTROS", file_type="datasus"):
         print(f"Erro no processamento de {file_info.name}: {e}")
         return None
 
-def check_already_processed(target_table, filename, file_hash):
-    """
-    Verifica se arquivo ja foi processado para evitar duplicidades.
+    def check_already_processed(target_table, filename, file_hash):
+        """
+        Verifica se arquivo ja foi processado para evitar duplicidades.
     
     Args:
         target_table (str): Tabela de destino
@@ -524,9 +524,9 @@ def check_already_processed(target_table, filename, file_hash):
     except:
         return False
 
-def execute_system_ingestion(system, target_table, extensions):
-    """
-    Executa processo de ingestao completo para um sistema especifico.
+    def execute_system_ingestion(system, target_table, extensions):
+        """
+        Executa processo de ingestao completo para um sistema especifico.
     
     Args:
         system (str): Sistema a ser processado (DNSP/DOINF)
@@ -590,16 +590,16 @@ def execute_system_ingestion(system, target_table, extensions):
     
     return stats
 
-def execute_annexes_ingestion():
-    """
-    Executa ingestao de arquivos anexos (CSVs de suporte).
-    """
-    stats = {
-        'total_files': 0,
-        'processed_files': 0,
-        'skipped_files': 0,
-        'errors': 0
-    }
+    def execute_annexes_ingestion():
+        """
+        Executa ingestao de arquivos anexos (CSVs de suporte).
+        """
+        stats = {
+            'total_files': 0,
+            'processed_files': 0,
+            'skipped_files': 0,
+            'errors': 0
+        }
     
     # Arquivos anexos especificos para processamento
     target_files = [
@@ -652,11 +652,11 @@ def execute_annexes_ingestion():
     
     return stats
 
-def optimize_bronze_tables():
-    """
-    Otimiza as tabelas bronze apos ingestao para performance.
-    """
-    tables = [BRONZE_SINASC_TABLE, BRONZE_SIM_TABLE, BRONZE_ANEXOS_TABLE]
+    def optimize_bronze_tables():
+        """
+        Otimiza as tabelas bronze apos ingestao para performance.
+        """
+        tables = [BRONZE_SINASC_TABLE, BRONZE_SIM_TABLE, BRONZE_ANEXOS_TABLE]
     
     for table in tables:
         if spark.catalog.tableExists(table):
