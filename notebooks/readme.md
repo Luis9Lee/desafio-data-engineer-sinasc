@@ -278,9 +278,9 @@ O pipeline gera métricas completas incluindo:
         print(f"Erro ao extrair metadados de {filename}: {e}")
         return None
 
-def read_file_with_fallback(file_path, filename, extension):
-    """
-    Le arquivos com multiplas estrategias de fallback para tolerancia a erros.
+    def read_file_with_fallback(file_path, filename, extension):
+        """
+        Le arquivos com multiplas estrategias de fallback para tolerancia a erros.
     
     Args:
         file_path (str): Caminho completo do arquivo
@@ -809,44 +809,44 @@ Esta documentação reflete com precisão a implementação real da camada Silve
 ✅ **Metadados preservados** da camada Bronze  
 ✅ **Qualidade de dados** alcançada (0% nulos em campos críticos)  
 
-
+````
 ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------        
         
-# Databricks notebook source
-# =============================================================================
-# CAMADA SILVER - DADOS CONFORMADOS E ENRIQUECIDOS
-# =============================================================================
-# Objetivo: Transformar dados brutos da camada Bronze em dados estruturados,
-#           limpos e enriquecidos com regras de negocio e dimensoes.
-# Arquitetura: Medallion (Silver) com dados conformados para analise
-# =============================================================================
-
-from pyspark.sql.functions import *
-from pyspark.sql.types import *
-from datetime import datetime
-import json
-
-# =============================================================================
-# CONFIGURACOES GLOBAIS
-# =============================================================================
-
-# Configurar database padrao
-spark.sql("USE default")
-
-# Nomes das tabelas
-SILVER_NASCIMENTOS_TABLE = "silver_nascimentos"
-SILVER_OBITOS_TABLE = "silver_obitos"
-DIM_MUNICIPIOS_TABLE = "dim_municipios"
-DIM_DISTRITOS_TABLE = "dim_distritos"
-
-# =============================================================================
-# FUNCOES AUXILIARES
-# =============================================================================
-
-def check_bronze_tables():
-    """
-    Verifica a disponibilidade das tabelas bronze necessarias para o processamento.
+    # Databricks notebook source
+    # =============================================================================
+    # CAMADA SILVER - DADOS CONFORMADOS E ENRIQUECIDOS
+    # =============================================================================
+    # Objetivo: Transformar dados brutos da camada Bronze em dados estruturados,
+    #           limpos e enriquecidos com regras de negocio e dimensoes.
+    # Arquitetura: Medallion (Silver) com dados conformados para analise
+    # =============================================================================
     
+    from pyspark.sql.functions import *
+    from pyspark.sql.types import *
+    from datetime import datetime
+    import json
+    
+    # =============================================================================
+    # CONFIGURACOES GLOBAIS
+    # =============================================================================
+    
+    # Configurar database padrao
+    spark.sql("USE default")
+    
+    # Nomes das tabelas
+    SILVER_NASCIMENTOS_TABLE = "silver_nascimentos"
+    SILVER_OBITOS_TABLE = "silver_obitos"
+    DIM_MUNICIPIOS_TABLE = "dim_municipios"
+    DIM_DISTRITOS_TABLE = "dim_distritos"
+    
+    # =============================================================================
+    # FUNCOES AUXILIARES
+    # =============================================================================
+    
+    def check_bronze_tables():
+        """
+        Verifica a disponibilidade das tabelas bronze necessarias para o processamento.
+        
     Returns:
         list: Lista de tabelas bronze disponiveis
     """
@@ -864,12 +864,12 @@ def check_bronze_tables():
     
     return available_tables
 
-def create_geographic_dimensions():
-    """
-    Cria dimensoes geograficas de municipios e distritos para enriquecimento dos dados.
-    Inclui dados basicos de municipios de referencia para demonstracao.
-    """
-    print("Criando dimensoes geograficas...")
+    def create_geographic_dimensions():
+        """
+        Cria dimensoes geograficas de municipios e distritos para enriquecimento dos dados.
+        Inclui dados basicos de municipios de referencia para demonstracao.
+        """
+        print("Criando dimensoes geograficas...")
     
     try:
         # Dados de municipios de referencia para demonstracao
@@ -927,10 +927,10 @@ def create_geographic_dimensions():
         print(f"Erro ao criar dimensoes geograficas: {str(e)}")
         raise
 
-def process_births_data():
-    """
-    Processa e transforma dados de nascimentos da bronze_sinasc para silver_nascimentos.
-    Aplica limpeza, enriquecimento e regras de negocio especificas.
+    def process_births_data():
+        """
+        Processa e transforma dados de nascimentos da bronze_sinasc para silver_nascimentos.
+        Aplica limpeza, enriquecimento e regras de negocio especificas.
     
     Returns:
         DataFrame: DataFrame processado com dados de nascimentos ou None em caso de erro
@@ -993,9 +993,9 @@ def process_births_data():
         print(f"Erro no processamento de nascimentos: {str(e)}")
         return None
 
-def clean_births_data(df):
-    """
-    Aplica limpeza e transformacoes basicas nos dados de nascimentos.
+    def clean_births_data(df):
+        """
+        Aplica limpeza e transformacoes basicas nos dados de nascimentos.
     
     Args:
         df (DataFrame): DataFrame com dados brutos de nascimentos
@@ -1030,9 +1030,9 @@ def clean_births_data(df):
         .drop("data_nascimento_str")
     )
 
-def enrich_with_geography(df):
-    """
-    Enriquece dados com informacoes geograficas da dimensao de municipios.
+    def enrich_with_geography(df):
+        """
+        Enriquece dados com informacoes geograficas da dimensao de municipios.
     
     Args:
         df (DataFrame): DataFrame com dados a serem enriquecidos
@@ -1069,9 +1069,9 @@ def enrich_with_geography(df):
         )
     )
 
-def apply_business_rules(df):
-    """
-    Aplica regras de negocio e categorizacoes nos dados de nascimentos.
+    def apply_business_rules(df):
+        """
+        Aplica regras de negocio e categorizacoes nos dados de nascimentos.
     
     Args:
         df (DataFrame): DataFrame com dados limpos
@@ -1134,10 +1134,10 @@ def apply_business_rules(df):
                    .otherwise("Ignorado"))
     )
 
-def process_deaths_data():
-    """
-    Processa e transforma dados de obitos da bronze_sim para silver_obitos.
-    Aplica limpeza basica e padronizacao dos dados.
+    def process_deaths_data():
+        """
+        Processa e transforma dados de obitos da bronze_sim para silver_obitos.
+        Aplica limpeza basica e padronizacao dos dados.
     
     Returns:
         DataFrame: DataFrame processado com dados de obitos ou None em caso de erro
@@ -1191,13 +1191,13 @@ def process_deaths_data():
         print(f"Erro no processamento de obitos: {str(e)}")
         return None
 
-def validate_silver_tables():
-    """
-    Valida as tabelas silver criadas e exibe estatisticas de qualidade.
-    """
-    print("\n" + "="*50)
-    print("VALIDACAO DAS TABELAS SILVER")
-    print("="*50)
+    def validate_silver_tables():
+        """
+        Valida as tabelas silver criadas e exibe estatisticas de qualidade.
+        """
+        print("\n" + "="*50)
+        print("VALIDACAO DAS TABELAS SILVER")
+        print("="*50)
     
     validation_results = {}
     
@@ -1226,18 +1226,18 @@ def validate_silver_tables():
     
     return validation_results
 
-# =============================================================================
-# EXECUCAO PRINCIPAL
-# =============================================================================
-
-def main():
-    """
-    Funcao principal de execucao do pipeline Silver.
-    Orquestra todo o processo de transformacao e validacao.
-    """
-    print("=" * 80)
-    print("PIPELINE DE TRANSFORMACAO - CAMADA SILVER")
-    print("=" * 80)
+    # =============================================================================
+    # EXECUCAO PRINCIPAL
+    # =============================================================================
+    
+    def main():
+        """
+        Funcao principal de execucao do pipeline Silver.
+        Orquestra todo o processo de transformacao e validacao.
+        """
+        print("=" * 80)
+        print("PIPELINE DE TRANSFORMACAO - CAMADA SILVER")
+        print("=" * 80)
     
     # Verificar tabelas bronze disponiveis
     print("Verificando tabelas bronze...")
@@ -1311,12 +1311,11 @@ def main():
     except:
         print(f"\nNao foi possivel exibir amostra de {SILVER_OBITOS_TABLE}")
 
-# Execucao principal
-if __name__ == "__main__":
-    main()
-            
+    # Execucao principal
+    if __name__ == "__main__":
+        main()
+                
 ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------
-````
 # 🥇 CAMADA GOLD - MODELO DIMENSIONAL STAR SCHEMA
 
 **Objetivo:** Modelo analítico otimizado para BI com indicadores estratégicos de saúde materno-infantil agregados mensalmente.
@@ -1973,6 +1972,7 @@ if __name__ == "__main__":
     
         
 ------------------------------------------------------------------------------------------------------
+````
     # Databricks notebook source
     # =============================================================================
     # ✅ VERIFICAÇÃO ESSENCIAL - DESAFIO SAÚDE MATERNO-INFANTIL
